@@ -1,0 +1,1 @@
+Questo è un semplice file di prova per testare git
