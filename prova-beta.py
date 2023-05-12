@@ -100,7 +100,7 @@ def custom_loss():
     curr_beta = beta0[0]
     next_beta = curr_beta
     summation = []
-    for i in range(len(beta)):
+    for i in range(beta.shape[1]):
         x = np.array([curr_beta, T(i*dt)])
         next_beta = curr_beta + dt * multilayer_perceptron( x )
         summation.append( dt*(beta[i] - next_beta)**2 )
