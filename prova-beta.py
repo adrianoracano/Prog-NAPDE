@@ -4,21 +4,23 @@ Created on Thu May 11 10:20:06 2023
 
 @author: alean
 """
+
 import numpy as np
 import tensorflow as tf
 import math
 import MyCrankNicolsonClass as cnc
+from matplotlib import pyplot as plt
 
 f0 = 1
 inf_s = np.sqrt(np.finfo(np.float32).eps)
 learning_rate = 0.01
-training_steps = 3
+training_steps = 500
 batch_size = 100
-display_step = 2
+display_step = 50
 # Network Parameters
 n_input = 2     # input layer number of neurons
-n_hidden_1 = 2 # 1st layer number of neurons
-n_hidden_2 = 2 # 2nd layer number of neurons
+n_hidden_1 = 32 # 1st layer number of neurons
+n_hidden_2 = 32 # 2nd layer number of neurons
 n_output = 1    # output layer number of neurons
 weights = {
 'h1': tf.Variable(tf.random.normal([n_input, n_hidden_1])),
@@ -66,6 +68,7 @@ sys = [dbeta]
 def f(x):
   return 2*x
 # Custom loss function to approximate the derivatives
+"""
 def custom_loss():
   summation = []
   t_max=1.0
@@ -81,6 +84,28 @@ def custom_loss():
   for i in range(len(beta)):
       summation.append( ( beta[i] - beta_hat[i] )**2 )
   return tf.sqrt(tf.reduce_mean(tf.abs(summation)))
+"""
+
+t_max=2.0
+N=500
+beta0=np.array([0.5])
+cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
+cn_solver.compute_solution()
+t, beta = cn_solver.get_solution()
+dt = t_max /N
+
+
+def custom_loss():
+    
+    curr_beta = beta0[0]
+    next_beta = curr_beta
+    summation = []
+    for i in range(len(beta)):
+        x = np.array([curr_beta, T(i*dt)])
+        next_beta = curr_beta + dt * multilayer_perceptron( x )
+        summation.append( dt*(beta[i] - next_beta)**2 )
+        curr_beta = next_beta
+    return tf.sqrt(tf.reduce_sum(tf.abs(summation)))
 
 def train_step():
     with tf.GradientTape() as tape:
@@ -94,8 +119,19 @@ for i in range(training_steps):
   if i % display_step == 0:
     print("loss: %f " % (custom_loss()))
 
+summation = [beta0[0]]
+curr_beta = beta0[0]
+beta_hat = np.zeros(beta.shape[1])
+for i in range(beta.shape[1]):
+    # x = np.array([curr_beta, T(i*dt)])
+    # print(curr_beta)
+    next_beta = curr_beta + dt * g( curr_beta, T(dt*i) ).numpy()[0][0][0][0]
+    beta_hat[i] = next_beta
+    curr_beta = next_beta
+    
+plt.plot(t, beta_hat)
 
-
+cn_solver.plot_solutions("soluzione vera")
 
 
 
