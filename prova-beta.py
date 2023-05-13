@@ -14,9 +14,9 @@ from matplotlib import pyplot as plt
 f0 = 1
 inf_s = np.sqrt(np.finfo(np.float32).eps)
 learning_rate = 0.01
-training_steps = 500
+training_steps = 50
 batch_size = 100
-display_step = 50
+display_step = 10
 # Network Parameters
 n_input = 2     # input layer number of neurons
 n_hidden_1 = 32 # 1st layer number of neurons
@@ -87,7 +87,7 @@ def custom_loss():
 """
 
 t_max=2.0
-N=500
+N=50
 beta0=np.array([0.5])
 cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
 cn_solver.compute_solution()
@@ -100,12 +100,13 @@ def custom_loss():
     curr_beta = beta0[0]
     next_beta = curr_beta
     summation = []
-    for i in range(beta.shape[1]):
-        x = np.array([curr_beta, T(i*dt)])
-        next_beta = curr_beta + dt * multilayer_perceptron( x )
-        summation.append( dt*(beta[i] - next_beta)**2 )
-        curr_beta = next_beta
-    return tf.sqrt(tf.reduce_sum(tf.abs(summation)))
+    for i in range(beta.shape[1]-1):
+        # x = np.array([curr_beta, T(i*dt)])
+        # next_beta = curr_beta + dt * multilayer_perceptron( x )
+        next_beta = curr_beta + dt * g(curr_beta, T(i*dt))
+        summation.append( dt*(beta[0, i+1] - next_beta)**2 )
+        curr_beta = next_beta.numpy()[0][0][0][0]
+    return tf.reduce_sum(summation)
 
 def train_step():
     with tf.GradientTape() as tape:
@@ -119,19 +120,21 @@ for i in range(training_steps):
   if i % display_step == 0:
     print("loss: %f " % (custom_loss()))
 
-summation = [beta0[0]]
+
 curr_beta = beta0[0]
 beta_hat = np.zeros(beta.shape[1])
-for i in range(beta.shape[1]):
+beta_hat[0]=curr_beta
+for i in range(beta.shape[1]-1):
     # x = np.array([curr_beta, T(i*dt)])
     # print(curr_beta)
     next_beta = curr_beta + dt * g( curr_beta, T(dt*i) ).numpy()[0][0][0][0]
-    beta_hat[i] = next_beta
+    beta_hat[i+1] = next_beta
     curr_beta = next_beta
     
+    
 plt.plot(t, beta_hat)
+cn_solver.plot_solutions()
 
-cn_solver.plot_solutions("soluzione vera")
 
 
 
