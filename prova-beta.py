@@ -10,11 +10,25 @@ import tensorflow as tf
 import math
 import MyCrankNicolsonClass as cnc
 from matplotlib import pyplot as plt
+import os
+import random
+
+tfk = tf.keras
+tfkl = tf.keras.layers
+
+# Random seed for reproducibility
+seed = 42
+
+random.seed(seed)
+os.environ['PYTHONHASHSEED'] = str(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
+tf.compat.v1.set_random_seed(seed)
 
 f0 = 1
 inf_s = np.sqrt(np.finfo(np.float32).eps)
 learning_rate = 0.01
-training_steps = 50
+training_steps = 200
 batch_size = 100
 display_step = 10
 # Network Parameters
@@ -22,15 +36,18 @@ n_input = 2     # input layer number of neurons
 n_hidden_1 = 32 # 1st layer number of neurons
 n_hidden_2 = 32 # 2nd layer number of neurons
 n_output = 1    # output layer number of neurons
+
+initializer = tf.keras.initializers.GlorotNormal()
+
 weights = {
-'h1': tf.Variable(tf.random.normal([n_input, n_hidden_1])),
-'h2': tf.Variable(tf.random.normal([n_hidden_1, n_hidden_2])),
-'out': tf.Variable(tf.random.normal([n_hidden_2, n_output]))
+'h1': tf.Variable(initializer(shape = (n_input, n_hidden_1))),
+'h2': tf.Variable(initializer(shape = (n_hidden_1, n_hidden_2))),
+'out': tf.Variable(initializer(shape = (n_hidden_2, n_output)))
 }
 biases = {
-'b1': tf.Variable(tf.random.normal([n_hidden_1])),
-'b2': tf.Variable(tf.random.normal([n_hidden_2])),
-'out': tf.Variable(tf.random.normal([n_output]))
+'b1': tf.Variable(initializer(shape = (n_hidden_1,))),
+'b2': tf.Variable(initializer(shape = (n_hidden_2,))),
+'out': tf.Variable(initializer(shape = (n_output,)))
 }
 # Stochastic gradient descent optimizer.
 optimizer = tf.optimizers.SGD(learning_rate)
@@ -39,9 +56,9 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def multilayer_perceptron(x):
   x = np.array([[[x]]],  dtype='float32')
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-  layer_1 = tf.nn.sigmoid(layer_1)
+  layer_1 = tf.nn.leaky_relu(layer_1)
   layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-  layer_2 = tf.nn.sigmoid(layer_2)
+  layer_2 = tf.nn.leaky_relu(layer_2)
   output = tf.matmul(layer_2, weights['out']) + biases['out']
   return output
 # Universal Approximator
