@@ -50,13 +50,13 @@ def g(beta, T):
     #return x * multilayer_perceptron(x)
     return multilayer_perceptron(x)
 # Given EDO
-tau = 365.
+tau =10.0
 
 def beta_eq(T):
     return 1.0 - T
 
 def T(t):
-    return math.cos(t)
+    return -t**2+5*t
 
 def dbeta(beta, t):
     return 1/tau*( beta_eq(T(t)) - beta[0] )
@@ -64,9 +64,6 @@ def dbeta_hat(beta, t):
     return g(beta[0], T(t))
     
 sys = [dbeta]    
-
-def f(x):
-  return 2*x
 # Custom loss function to approximate the derivatives
 """
 def custom_loss():
@@ -86,8 +83,8 @@ def custom_loss():
   return tf.sqrt(tf.reduce_mean(tf.abs(summation)))
 """
 
-t_max=2.0
-N=50
+t_max=tau
+N=100
 beta0=np.array([0.5])
 cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
 cn_solver.compute_solution()
@@ -106,7 +103,7 @@ def custom_loss():
         next_beta = curr_beta + dt * g(curr_beta, T(i*dt))
         summation.append( dt*(beta[0, i+1] - next_beta)**2 )
         curr_beta = next_beta.numpy()[0][0][0][0]
-    return tf.reduce_sum(summation)
+    return tf.sqrt(tf.reduce_sum(tf.abs(summation)))
 
 def train_step():
     with tf.GradientTape() as tape:
@@ -118,6 +115,7 @@ def train_step():
 for i in range(training_steps):
   train_step()
   if i % display_step == 0:
+    print("iterazione numero: %i " %(i))
     print("loss: %f " % (custom_loss()))
 
 
@@ -133,7 +131,7 @@ for i in range(beta.shape[1]-1):
     
     
 plt.plot(t, beta_hat)
-cn_solver.plot_solutions()
+cn_solver.plot_solutions(["soluzione vera"])
 
 
 
