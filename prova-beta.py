@@ -12,6 +12,7 @@ import MyCrankNicolsonClass as cnc
 from matplotlib import pyplot as plt
 import os
 import random
+import MyDatasetGenerator as dg
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -28,7 +29,7 @@ tf.compat.v1.set_random_seed(seed)
 f0 = 1
 inf_s = np.sqrt(np.finfo(np.float32).eps)
 learning_rate = 0.01
-training_steps = 200
+training_steps = 100
 batch_size = 100
 display_step = 10
 # Network Parameters
@@ -56,9 +57,11 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def multilayer_perceptron(x):
   x = np.array([[[x]]],  dtype='float32')
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-  layer_1 = tf.nn.leaky_relu(layer_1)
+  #layer_1 = tf.nn.leaky_relu(layer_1)
+  layer_1 = tf.nn.sigmoid(layer_1)
   layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-  layer_2 = tf.nn.leaky_relu(layer_2)
+  #layer_2 = tf.nn.leaky_relu(layer_2)
+  layer_2 = tf.nn.sigmoid(layer_2)
   output = tf.matmul(layer_2, weights['out']) + biases['out']
   return output
 # Universal Approximator
@@ -71,44 +74,54 @@ tau =10.0
 
 def beta_eq(T):
     return 1.0 - T
-
+"""
 def T(t):
     return -t**2+5*t
+"""
 
-def dbeta(beta, t):
-    return 1/tau*( beta_eq(T(t)) - beta[0] )
+# QUI VENGONO GENERATE DELLE TEMPERATURE
+temperature_funcs = []
+K = 5 # numero di funzioni temperatura
+for k in range(K):
+    center = random.gauss(120.0, 5.0)
+    height = random.gauss(16.0, 2.0)
+    width = random.gauss(14.0, 1.0)
+    def T(t):
+        return math.sin(2*math.pi/tau*(t-center))*width + height
+    temperature_funcs.append(T)
+     
+
+# QUI VIENE DEFINITO IL SISTEMA: dbeta = f(beta(t), T(t))
+
+N = 250
+t_max = 10.
+beta0 = np.array([0.5])
+def f(beta, T):
+    return (beta_eq(T) - beta[0])/tau
+
+data = {
+    "N" : N,
+    "t_max" : t_max,
+    "beta0" : beta0,
+    "f" : f
+}
+
+dataset = dg.generate_dataset(temperature_funcs, data)
+
+
+
 def dbeta_hat(beta, t):
     return g(beta[0], T(t))
     
-sys = [dbeta]    
 # Custom loss function to approximate the derivatives
-"""
-def custom_loss():
-  summation = []
-  t_max=1.0
-  N=50
-  beta0=np.array([0.5])
-  cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
-  cn_solver.compute_solution()
-  t, beta = cn_solver.get_solution()
-  sys_hat=[dbeta_hat]
-  cn_solver_hat = cnc.CrankNicolson(sys_hat, beta0, t_max, N)
-  cn_solver_hat.compute_solution()
-  t, beta_hat = cn_solver_hat.get_solution()
-  for i in range(len(beta)):
-      summation.append( ( beta[i] - beta_hat[i] )**2 )
-  return tf.sqrt(tf.reduce_mean(tf.abs(summation)))
-"""
 
-t_max=tau
-N=100
-beta0=np.array([0.5])
+"""
 cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
 cn_solver.compute_solution()
 t, beta = cn_solver.get_solution()
 dt = t_max /N
-
-
+"""
+"""
 def custom_loss():
     
     curr_beta = beta0[0]
@@ -120,6 +133,22 @@ def custom_loss():
         next_beta = curr_beta + dt * g(curr_beta, T(i*dt))
         summation.append( dt*(beta[0, i+1] - next_beta)**2 )
         curr_beta = next_beta.numpy()[0][0][0][0]
+    return tf.sqrt(tf.reduce_sum(tf.abs(summation)))
+"""
+
+# UNA NUOVA CUSTOM_LOSS CHE UTILIZZA TUTTE LE TEMPERATURE
+dt = t_max / N
+summation_step = 10
+def custom_loss():
+    summation = []
+    for k in range(K):
+        curr_beta = beta0[0]
+        next_beta = curr_beta
+        for i in range(N-1):
+            next_beta = curr_beta + dt * g(curr_beta, dataset[0, k, i])
+            if i % summation_step == 0:
+                summation.append((dataset[1, k, i+1] - next_beta)**2)
+            curr_beta = next_beta.numpy()[0][0][0][0]
     return tf.sqrt(tf.reduce_sum(tf.abs(summation)))
 
 def train_step():
@@ -135,7 +164,7 @@ for i in range(training_steps):
     print("iterazione numero: %i " %(i))
     print("loss: %f " % (custom_loss()))
 
-
+"""
 curr_beta = beta0[0]
 beta_hat = np.zeros(beta.shape[1])
 beta_hat[0]=curr_beta
@@ -145,10 +174,35 @@ for i in range(beta.shape[1]-1):
     next_beta = curr_beta + dt * g( curr_beta, T(dt*i) ).numpy()[0][0][0][0]
     beta_hat[i+1] = next_beta
     curr_beta = next_beta
-    
-    
-plt.plot(t, beta_hat)
-cn_solver.plot_solutions(["soluzione vera"])
+"""
+
+# ORA GENERO UNA NUOVA TEMPERATURA DIFFERENTE DALLE PRECEDENTI E FACCIO UN PLOT
+
+center = random.gauss(120.0, 5.0)
+height = random.gauss(16.0, 2.0)
+width = random.gauss(14.0, 1.0)
+def T(t):
+    return math.sin(2*math.pi/tau*(t-center))*width + height
+
+
+
+def dbeta(beta, t):
+    return f(beta, T(t))
+sys = [dbeta]
+cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
+cn_solver.compute_solution()
+t, beta = cn_solver.get_solution()
+curr_beta = beta0[0]
+beta_hat = np.zeros(beta.shape[1])
+beta_hat[0]=curr_beta
+for i in range(beta.shape[1]-1):
+    next_beta = curr_beta + dt * g( curr_beta, T(dt*i) ).numpy()[0][0][0][0]
+    beta_hat[i+1] = next_beta
+    curr_beta = next_beta
+
+pp = plt.plot(t, beta_hat)
+plt.plot(t, beta[0, ])
+plt.legend(["soluzione rete", "solzione vera"])
 
 
 
