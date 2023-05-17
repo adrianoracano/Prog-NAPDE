@@ -5,7 +5,7 @@ Created on Sun May 14 21:39:19 2023
 @author: alean
 """
 
-center = random.gauss(120.0, 5.0)
+center = random.gauss(0.5,0.1)
 height = random.gauss(16.0, 2.0)
 width = random.gauss(14.0, 1.0)
 def T(t):
@@ -26,7 +26,6 @@ for i in range(beta.shape[1]-1):
     next_beta = curr_beta + dt * g( curr_beta, T(dt*i) )
     curr_beta = next_beta
     beta_hat[i+1] = next_beta.numpy()[0][0]
-    curr_beta = next_beta
 pp = plt.plot(t, beta_hat)
 plt.plot(t, beta[0, ])
 plt.legend(["soluzione rete", "solzione vera"])

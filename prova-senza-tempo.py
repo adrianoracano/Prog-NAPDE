@@ -40,9 +40,9 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def multilayer_perceptron(x):
   # x = np.array([[[x]]],  dtype='float32')
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-  layer_1 = tf.nn.sigmoid(layer_1)
+  layer_1 = tf.nn.leaky_relu(layer_1)
   layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-  layer_2 = tf.nn.sigmoid(layer_2)
+  layer_2 = tf.nn.leaky_relu(layer_2)
   output = tf.matmul(layer_2, weights['out']) + biases['out']
   return output
 # Universal Approximator
@@ -60,7 +60,7 @@ def T(t):
     return math.cos(t)
 
 def dbeta(beta, t):
-    return  beta[0] - 10.0
+    return  -6.0*t*beta[0]
 def dbeta_hat(beta, t):
     return g(beta[0], T(t))
     
@@ -87,8 +87,8 @@ def custom_loss():
   return tf.sqrt(tf.reduce_mean(tf.abs(summation)))
 """
 
-t_max=3.0
-N=250
+t_max=1.0
+N=100
 beta0=np.array([1.0])
 cn_solver = cnc.CrankNicolson(sys, beta0, t_max, N)
 cn_solver.compute_solution()
@@ -132,7 +132,7 @@ for i in range(training_steps):
     print("loss: %f " % (custom_loss()))
 
 
-curr_beta = beta0[0]
+curr_beta = tf.constant([[beta0[0]]], dtype = 'float32')
 beta_hat = np.zeros(beta.shape[1])
 beta_hat[0]=curr_beta
 for i in range(beta.shape[1]-1):

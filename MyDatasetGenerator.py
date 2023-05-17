@@ -28,7 +28,7 @@ def print_help():
     
     
 def generate_dataset(functions, data):
-    import MyCrankNicolsonClass as cnc
+    from utilities import MyCrankNicolsonClass as cnc
     import numpy as np
     n_functions = len(functions)
     dataset = np.zeros([2, n_functions, data["N"]])

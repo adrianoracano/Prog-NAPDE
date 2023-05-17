@@ -18,23 +18,23 @@ tf.keras.backend.set_floatx('float64')
 tfk = tf.keras
 tfkl = tf.keras.layers
 
-# Random seed for reproducibility
-seed = 42
-
+# Random seed for reproducibility 
+#seed = 42
+seed = 64
 random.seed(seed)
 os.environ['PYTHONHASHSEED'] = str(seed)
 np.random.seed(seed)
 tf.random.set_seed(seed)
 tf.compat.v1.set_random_seed(seed)
 
-learning_rate = 0.0025
-training_steps = 100
+learning_rate = 0.01
+training_steps = 250
 batch_size = 100
-display_step = 10
+display_step = 25
 # Network Parameters
 n_input = 2     # input layer number of neurons
-n_hidden_1 = 32 # 1st layer number of neurons
-n_hidden_2 = 32 # 2nd layer number of neurons
+n_hidden_1 = 2 # 1st layer number of neurons
+n_hidden_2 = 2 # 2nd layer number of neurons
 n_output = 1    # output layer number of neurons
 
 initializer = tf.keras.initializers.GlorotNormal()
@@ -56,11 +56,11 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def multilayer_perceptron(x):
   # x = np.array([[[x]]],  dtype='float32')
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-  #layer_1 = tf.nn.leaky_relu(layer_1)
-  layer_1 = tf.nn.sigmoid(layer_1)
+  layer_1 = tf.nn.leaky_relu(layer_1)
+  #layer_1 = tf.nn.sigmoid(layer_1)
   layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-  #layer_2 = tf.nn.leaky_relu(layer_2)
-  layer_2 = tf.nn.sigmoid(layer_2)
+  layer_2 = tf.nn.leaky_relu(layer_2)
+  #layer_2 = tf.nn.sigmoid(layer_2)
   output = tf.matmul(layer_2, weights['out']) + biases['out']
   return output
 # Universal Approximator
@@ -83,9 +83,9 @@ def T(t):
 # QUI VENGONO GENERATE DELLE TEMPERATURE
 temperature_funcs = []
 t_max=1.0
-K = 5 # numero di funzioni temperatura
+K = 10 # numero di funzioni temperatura
 for k in range(K):
-    center = random.gauss(120.0, 5.0)
+    center = random.gauss(0.5, 0.1)
     height = random.gauss(16.0, 2.0)
     width = random.gauss(14.0, 1.0)
     def T(t):
@@ -95,7 +95,7 @@ for k in range(K):
 
 # QUI VIENE DEFINITO IL SISTEMA: dbeta = f(beta(t), T(t))
 
-N = 250
+N = 50
 beta0 = np.array([0.5])
 def f(beta, T):
     return (beta_eq(T) - beta[0])/tau
@@ -139,7 +139,7 @@ def custom_loss():
 
 # UNA NUOVA CUSTOM_LOSS CHE UTILIZZA TUTTE LE TEMPERATURE
 dt = t_max / N
-summation_step = 10
+summation_step = 5
 def custom_loss():
     summation = []
     for k in range(K):
@@ -150,9 +150,8 @@ def custom_loss():
             #next_beta = curr_beta + dt * g(curr_beta, dataset[0, k, i])
             next_beta = tf.add(curr_beta, tf.matmul(dt_tensor, g(curr_beta, dataset[0, k, i])) )
             if i % summation_step == 0:
-                real_beta=tf.constant([dataset[1,k,i+1]], dtype = 'float64')
+                real_beta=tf.constant([[dataset[1,k,i+1]]], dtype = 'float64')
                 summation.append((real_beta - next_beta)**2)
-            # curr_beta = next_beta.numpy()[0][0][0][0]
             curr_beta = next_beta
     return (tf.reduce_mean(tf.abs(summation)))
 
@@ -183,7 +182,7 @@ for i in range(beta.shape[1]-1):
 
 # ORA GENERO UNA NUOVA TEMPERATURA DIFFERENTE DALLE PRECEDENTI E FACCIO UN PLOT
 
-center = random.gauss(120.0, 5.0)
+center = random.gauss(0.5, 0.1)
 height = random.gauss(16.0, 2.0)
 width = random.gauss(14.0, 1.0)
 def T(t):
@@ -202,8 +201,8 @@ beta_hat = np.zeros(beta.shape[1])
 beta_hat[0]=curr_beta.numpy()[0][0]
 for i in range(beta.shape[1]-1):
     next_beta = curr_beta + dt * g( curr_beta, T(dt*i) ).numpy()[0][0]
-    beta_hat[i+1] = next_beta
-    curr_beta = tf.constant([[next_beta]],  dtype = 'float64')
+    beta_hat[i+1] = next_beta.numpy()[0][0]
+    curr_beta = next_beta
 
 pp = plt.plot(t, beta_hat)
 plt.plot(t, beta[0, ])
