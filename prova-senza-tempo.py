@@ -14,14 +14,14 @@ tf.keras.backend.set_floatx('float32')
 
 f0 = 1
 inf_s = np.sqrt(np.finfo(np.float32).eps)
-learning_rate = 0.01
+learning_rate = 0.5
 training_steps = 200
 batch_size = 100
 display_step = 20
 # Network Parameters
 n_input = 1     # input layer number of neurons
-n_hidden_1 = 32 # 1st layer number of neurons
-n_hidden_2 = 32 # 2nd layer number of neurons
+n_hidden_1 = 2 # 1st layer number of neurons
+n_hidden_2 = 2 # 2nd layer number of neurons
 n_output = 1    # output layer number of neurons
 weights = {
 'h1': tf.Variable(tf.random.normal([n_input, n_hidden_1])),
@@ -40,9 +40,9 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def multilayer_perceptron(x):
   # x = np.array([[[x]]],  dtype='float32')
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-  layer_1 = tf.nn.leaky_relu(layer_1)
+  layer_1 = tf.nn.sigmoid(layer_1)
   layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-  layer_2 = tf.nn.leaky_relu(layer_2)
+  layer_2 = tf.nn.sigmoid(layer_2)
   output = tf.matmul(layer_2, weights['out']) + biases['out']
   return output
 # Universal Approximator
@@ -104,7 +104,8 @@ def custom_loss():
         # x = np.array([curr_beta, T(i*dt)])
         next_beta = curr_beta + dt * g( curr_beta )
         #next_beta = curr_beta + dt * g(curr_beta)
-        summation.append( (beta[0, i+1] - next_beta)**2 )
+        real_beta = tf.constant([[beta[0, i+1]]], dtype = 'float32')
+        summation.append( (real_beta - next_beta)**2 )
         curr_beta = next_beta
     return tf.reduce_mean(summation)
 """
@@ -125,9 +126,14 @@ def train_step():
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
+    return gradients
+
+gradients = train_step()
+
 # Training the Model:
 for i in range(training_steps):
   train_step()
+  #print(gradients)
   if i % display_step == 0:
     print("loss: %f " % (custom_loss()))
 
