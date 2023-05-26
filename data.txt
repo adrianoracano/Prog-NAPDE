@@ -1,0 +1,9 @@
+step_summation: 1
+learning_rate: 0.01
+t_max: 1.0
+beta0: 0.05
+K: 5
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 50
