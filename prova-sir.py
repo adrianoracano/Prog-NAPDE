@@ -10,13 +10,13 @@ QUETA E' UNA PROVA PER IMPLEMENARE IL SIR
 """
 import tensorflow as tf
 import numpy as np
-import math
 import MyTemperatureGenerator as tg
 import MyDatasetGenerator as dsg
 import HerRungeKutta as hrk
 import argparse
 import sys
 import pickle
+from matplotlib import pyplot as plt
 parser=argparse.ArgumentParser()
 parser.add_argument('-t', '--train', action = 'store_true', help = 'train the network')
 parser.add_argument('-ph','--print-help', action = 'store_true')
@@ -24,14 +24,12 @@ parser.add_argument('-s', '--save-weights', help = 'save the weights in the spec
 parser.add_argument('-fs', '--file-save', help = 'where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
 parser.add_argument('-l', '--load-weights', help = 'load the weights in the specified file before the training', action = 'store_true')
 parser.add_argument('-fl', '--file-load', help='where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
-parser.add_argument('-f', '--file', help = 'specify the file name. default: data.txt')
+parser.add_argument('-f', '--file', help = 'specify the file name. default: data.txt', default = 'data.txt')
 parser.add_argument('-p', '--plot', help = 'number of plots after training', default = '0')
+parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
 
 args = parser.parse_args()
 
-if args.file_save:
-    print(args.file_save)
-    sys.exit()
 
 if args.print_help:
     print('scrivere help per lo script')
@@ -49,16 +47,16 @@ with open(args.file, 'r') as file:
 
 learning_rate = float(data_dict['learning_rate'])
 n_input = 2
-n_hidden = 10
+n_hidden = 15
 n_output = 1
 display_step = 10
 
 
 if args.load_weights:
-    with open('saved_variables.pkl', 'rb') as file:
-        weights, biases = pickle.load(args.file_load)
+    with open(args.file_load, 'rb') as file:
+        weights, biases = pickle.load(file)
 
-if not args.load_weights:  
+if args.new_weights:  
     weights = {
     'h1': tf.Variable(tf.random.normal([n_input, n_hidden])),
     'out': tf.Variable(tf.random.normal([n_hidden, n_output]))
@@ -98,7 +96,7 @@ I = np.zeros([K, N]) #da usare per gli infetti
 def f(beta, T):
     return 5.0*((1.0-T) - beta)
 for k in range(K):
-    T = tg.generate_temperature("exp", t_max=t_max)
+    T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
     temperature.append(T)
 
 data = {
@@ -161,10 +159,25 @@ if args.train:
 
 if args.save_weights:
     with open(args.file_save, 'wb') as file:
-        pickle.dump((weights, biases), args.file_save)
+        pickle.dump((weights, biases), file)
 
 n_plots = int(args.plot)
+"""
 for i in range(n_plots):
-    runfile('plot-sir.py')
-
+    T = tg.generate_temperature(data_dict["temperature_type"])
+    y_real = np.zeros(N)
+    y_nn = np.zeros(N)
+    y_real[0] = y0
+    y_nn[0] = y0 
+    curr_y = tf.constant([[y0]], dtype = 'float32')
+    for i in range(N-1):
+        next_y = curr_y + dt*g(curr_y, T(t[i]))
+        y_nn[i+1] = next_y.numpy()[0][0]
+        y_real[i+1] = y_real[i] + dt*f(y_real[i], T(t[i]))
+        curr_y = next_y
+    plt.plot(t, y_real)
+    plt.plot(t, y_nn)
+    plt.show()
+    plt.legend(["soluzione reale", "soluzione rete"])
+"""
 
