@@ -18,15 +18,17 @@ import sys
 import pickle
 from matplotlib import pyplot as plt
 parser=argparse.ArgumentParser()
-parser.add_argument('-t', '--train', action = 'store_true', help = 'train the network')
+parser.add_argument('-t', '--train', help = 'train the network', action = 'store_true')
+parser.add_argument('-i', '--iterations', help = 'override the number of iterations', type = int, default = 0)
 parser.add_argument('-ph','--print-help', action = 'store_true')
-parser.add_argument('-s', '--save-weights', help = 'save the weights in the specified file after the training', action = 'store_true')
-parser.add_argument('-fs', '--file-save', help = 'where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
-parser.add_argument('-l', '--load-weights', help = 'load the weights in the specified file before the training', action = 'store_true')
-parser.add_argument('-fl', '--file-load', help='where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
+parser.add_argument('-s', '--save-weights', help = 'save the weights in the specified file after the training', default = '')
+# parser.add_argument('-fs', '--file-save', help = 'where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
+parser.add_argument('-l', '--load-weights', help = 'load the weights in the specified file before the training', default = '')
+# parser.add_argument('-fl', '--file-load', help='where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
 parser.add_argument('-f', '--file', help = 'specify the file name. default: data.txt', default = 'data.txt')
-parser.add_argument('-p', '--plot', help = 'number of plots after training', default = '0')
+parser.add_argument('-p', '--plot', help = 'number of plots after training', default = 0, type = int)
 parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
+parser.add_argument('-ft', '--fun-type', help = 'override the type of temperature functions', default = '')
 
 args = parser.parse_args()
 
@@ -52,8 +54,8 @@ n_output = 1
 display_step = 10
 
 
-if args.load_weights:
-    with open(args.file_load, 'rb') as file:
+if len(args.load_weights) > 0:
+    with open(args.load_weights, 'rb') as file:
         weights, biases = pickle.load(file)
 
 if args.new_weights:  
@@ -96,7 +98,10 @@ I = np.zeros([K, N]) #da usare per gli infetti
 def f(beta, T):
     return 5.0*((1.0-T) - beta)
 for k in range(K):
-    T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
+    if len(args.fun_type) == 0:
+        T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
+    else:
+        T = tg.generate_temperature(args.fun_type, t_max=t_max)
     temperature.append(T)
 
 data = {
@@ -109,7 +114,10 @@ data = {
 #save_dataset = dataset.copy()
 dataset = dsg.generate_dataset(temperature, data)
 a=float(data_dict['alpha'])
-sir_0= np.array([10, 0.5, 0.])
+S0 = float(data_dict['S0'])
+I0 = float(data_dict['I0'])
+R0 = float(data_dict['R0'])
+sir_0= np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
     I[k, ] = i.copy()
@@ -145,26 +153,35 @@ def train_step():
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
-    
-training_steps = int(data_dict['training_steps'])
+if args.iterations == 0:
+    training_steps = int(data_dict['training_steps'])
+else:
+    training_steps = args.iterations
 display_step = int(data_dict['display_step'])
 
 if args.train:
-    for i in range(training_steps):
-      train_step()
-      if i % display_step == 0:
-        print("iterazione %i:" % i)
-        print("loss: %f " % (custom_loss()))
+    try:
+        for i in range(training_steps):
+          train_step()
+          if i % display_step == 0:
+            print("iterazione %i:" % i)
+            print("loss: %f " % (custom_loss()))
+    except KeyboardInterrupt:
+        print('Training interrupted by user. Proceeding to save the weights and plot the solutions')
         
 
-if args.save_weights:
-    with open(args.file_save, 'wb') as file:
+if len(args.save_weights) > 0:
+    with open(args.save_weights, 'wb') as file:
         pickle.dump((weights, biases), file)
 
-n_plots = int(args.plot)
-"""
+n_plots = args.plot
+
 for i in range(n_plots):
-    T = tg.generate_temperature(data_dict["temperature_type"])
+    plt.show()
+    if len(args.fun_type) == 0:
+        T = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
+    else:
+        T = tg.generate_temperature(args.fun_type, t_max = t_max)
     y_real = np.zeros(N)
     y_nn = np.zeros(N)
     y_real[0] = y0
@@ -177,7 +194,5 @@ for i in range(n_plots):
         curr_y = next_y
     plt.plot(t, y_real)
     plt.plot(t, y_nn)
-    plt.show()
     plt.legend(["soluzione reale", "soluzione rete"])
-"""
 

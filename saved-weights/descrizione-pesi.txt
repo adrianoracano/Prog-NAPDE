@@ -1,0 +1,2 @@
+	pesi_5_temp.pkl:
+training di circa 200 iterazioni usando 5 temperature del tipo "exp", con learning_step = 0.005

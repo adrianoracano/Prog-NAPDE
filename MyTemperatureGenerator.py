@@ -24,5 +24,10 @@ def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
         def T(t):
             return math.exp(-( (t-mean)/width )**2)
         return T
+    if fun_type == "decr-exp":
+        tau = random.gauss(0.5*t_max, 0.3*t_max)
+        def T(t):
+            return math.exp( -t/tau )
+        return T
 
     
