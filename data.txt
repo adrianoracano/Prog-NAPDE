@@ -3,11 +3,12 @@ learning_rate: 0.005
 t_max: 1.0
 beta0: 0.05
 K: 5
+K_val: 3
 N: 60
 alpha: 3.0
 training_steps: 500
 display_step: 10
 temperature_type: exp
 S0: 10.0
-I0: 0.05
+I0: 0.5
 R0: 0.0

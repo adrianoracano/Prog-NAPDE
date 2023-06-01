@@ -17,6 +17,7 @@ import argparse
 import sys
 import pickle
 from matplotlib import pyplot as plt
+
 parser=argparse.ArgumentParser()
 parser.add_argument('-t', '--train', help = 'train the network', action = 'store_true')
 parser.add_argument('-i', '--iterations', help = 'override the number of iterations', type = int, default = 0)
@@ -29,13 +30,17 @@ parser.add_argument('-f', '--file', help = 'specify the file name. default: data
 parser.add_argument('-p', '--plot', help = 'number of plots after training', default = 0, type = int)
 parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
 parser.add_argument('-ft', '--fun-type', help = 'override the type of temperature functions', default = '')
+parser.add_argument('-v', '--validate', help = 'use a validation set for the training', action = 'store_true')
 
 args = parser.parse_args()
 
+# print-help da completare
 
 if args.print_help:
     print('scrivere help per lo script')
     sys.exit()
+
+# i dati vengono presi dal file
 
 data_dict = {}
 
@@ -53,10 +58,12 @@ n_hidden = 15
 n_output = 1
 display_step = 10
 
+# vengono generati o caricati i pesi
 
 if len(args.load_weights) > 0:
     with open(args.load_weights, 'rb') as file:
-        weights, biases = pickle.load(file)
+        weights, biases, dataset = pickle.load(file)
+        
 
 if args.new_weights:  
     weights = {
@@ -71,7 +78,7 @@ if args.new_weights:
 
 # Stochastic gradient descent optimizer.
 optimizer = tf.optimizers.SGD(learning_rate)
-
+# optimizer = tf.optimizers.Adam(learning_rate)
 
 
 # Create model
@@ -93,16 +100,16 @@ N = int(data_dict['N'])
 t = np.linspace(0, t_max, N)
 dt = t_max/N
 K=int(data_dict['K']) # numero di temperature
+K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
 temperature= []
-I = np.zeros([K, N]) #da usare per gli infetti
+temperature_val = []
+
+
+# vengono generate le temperature per il training
+
 def f(beta, T):
     return 5.0*((1.0-T) - beta)
-for k in range(K):
-    if len(args.fun_type) == 0:
-        T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
-    else:
-        T = tg.generate_temperature(args.fun_type, t_max=t_max)
-    temperature.append(T)
+
 
 data = {
     'beta0' : np.array([y0]),
@@ -111,8 +118,32 @@ data = {
     'N' : N
         }
 
-#save_dataset = dataset.copy()
-dataset = dsg.generate_dataset(temperature, data)
+
+if len(args.load_weights) == 0:
+    for k in range(K):
+        if len(args.fun_type) == 0:
+            T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
+        else:
+            T = tg.generate_temperature(args.fun_type, t_max=t_max)
+        temperature.append(T)
+    dataset = dsg.generate_dataset(temperature, data)
+
+if args.validate:
+    for k in range(K_val):
+        if len(args.fun_type) == 0:
+            T_val = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
+        else:
+            T_val = tg.generate_temperature(args.fun_type, t_max = t_max)
+        temperature_val.append(T_val)
+    val_set = dsg.generate_dataset(temperature_val, data)
+
+    
+
+# vengono generati le osservazioni degli infetti
+
+I = np.zeros([K, N]) #da usare per gli infetti
+if args.validate:
+    I_val = np.zeros([K_val, N]) # da usare per il validation set
 a=float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
@@ -121,10 +152,17 @@ sir_0= np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
     I[k, ] = i.copy()
+if args.validate:
+    for k in range(K_val):
+        s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, t_max, a)
+        I_val[k, ] = i.copy()
+
 dt = t_max/N
-#dataset = save_dataset
 step_summation = int(data_dict['step_summation'])
-def custom_loss():
+
+# definizione della loss
+
+def custom_loss(K, dataset):
     total_summation = []
     for k in range(K):
         curr_y = tf.constant([[y0]], dtype = 'float32')
@@ -135,8 +173,6 @@ def custom_loss():
             next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
             next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
             next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
-            #print(next_I_nn)
-            #print(I[k, i+1])
             if i % step_summation == 0:
                 summation.append((next_I_nn - I[k, i+1])**2)
             curr_y = next_y
@@ -147,32 +183,42 @@ def custom_loss():
     return tf.reduce_mean(total_summation)
     
 
-def train_step():
+def train_step(K, dataset):
     with tf.GradientTape() as tape:
-        loss = custom_loss()
+        loss = custom_loss(K, dataset)
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
+    
+# override del numero massimo di iterazioni
+    
 if args.iterations == 0:
     training_steps = int(data_dict['training_steps'])
 else:
     training_steps = args.iterations
 display_step = int(data_dict['display_step'])
 
+# training della rete
+
 if args.train:
     try:
         for i in range(training_steps):
-          train_step()
+          train_step(K, dataset)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            print("loss: %f " % (custom_loss()))
+            print("loss on training set: %f " % (custom_loss(K, dataset)))
+            if args.validate:
+                print("loss on validation set: %f" % custom_loss(K_val, val_set))
     except KeyboardInterrupt:
-        print('Training interrupted by user. Proceeding to save the weights and plot the solutions')
+        print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions')
         
+# i pesi vengono salvati
 
 if len(args.save_weights) > 0:
     with open(args.save_weights, 'wb') as file:
-        pickle.dump((weights, biases), file)
+        pickle.dump((weights, biases, dataset), file)
+
+# vengono fatti i plot
 
 n_plots = args.plot
 

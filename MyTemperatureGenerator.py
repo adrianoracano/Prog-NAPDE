@@ -29,5 +29,14 @@ def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
         def T(t):
             return math.exp( -t/tau )
         return T
-
+    if fun_type == "sin":
+        periodo = 2*math.pi + random.gauss(0.0, t_max)
+        def T(t):
+            return math.sin(periodo*t)*T_max
+        return T
+    if fun_type == "const":
+        c = random.uniform(0.0, T_max)
+        def T(t):
+            return c
+        return T
     
