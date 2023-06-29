@@ -82,8 +82,10 @@ if args.new_weights:
 optimizer = tf.optimizers.SGD(learning_rate)
 # optimizer = tf.optimizers.Adam(learning_rate)
 
-
+##############
 # Create model
+##############
+
 def multilayer_perceptron(x):
   layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
   layer_1 = tf.nn.sigmoid(layer_1)
@@ -150,6 +152,7 @@ a=float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
+TOT = S0 + I0 + R0
 sir_0= np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
@@ -162,7 +165,9 @@ if args.validate:
 dt = t_max/N
 step_summation = int(data_dict['step_summation'])
 
+########################
 # definizione della loss
+########################
 
 def custom_loss(K, dataset):
     total_summation = []
@@ -176,7 +181,7 @@ def custom_loss(K, dataset):
             next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
             next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
             if i % step_summation == 0:
-                summation.append((next_I_nn - I[k, i+1])**2)
+                summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
@@ -200,15 +205,21 @@ else:
     training_steps = args.iterations
 display_step = int(data_dict['display_step'])
 
+#####################
 # training della rete
+#####################
 
 if args.train:
+    loss_history = np.zeros(int(training_steps/display_step))
+    if args.validate:
+        loss_history_val = np.zeros(int(training_steps/display_step))
+    
     try:
         for i in range(training_steps):
           train_step(K, dataset)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            print("loss on training set: %f " % (custom_loss(K, dataset)))
+            print("loss on training set: %f " % custom_loss(K, dataset))
             if args.validate:
                 print("loss on validation set: %f" % custom_loss(K_val, val_set))
     except KeyboardInterrupt:
@@ -220,8 +231,9 @@ if len(args.save_weights) > 0:
     with open(args.save_weights, 'wb') as file:
         pickle.dump((weights, biases, dataset), file)
 
+######################
 # vengono fatti i plot
-
+######################
 
 # plot del test set
 
