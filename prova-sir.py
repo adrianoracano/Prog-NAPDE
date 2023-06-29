@@ -32,6 +32,7 @@ parser.add_argument('-p', '--plot', help = 'number of plots after training', def
 parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
 parser.add_argument('-ft', '--fun-type', help = 'override the type of temperature functions', default = '')
 parser.add_argument('-v', '--validate', help = 'use a validation set for the training', action = 'store_true')
+parser.add_argument('-pt', '--plot-train', help='plot evolution of beta using the train set', action = 'store_true')
 
 args = parser.parse_args()
 
@@ -221,25 +222,94 @@ if len(args.save_weights) > 0:
 
 # vengono fatti i plot
 
+
+# plot del test set
+
 n_plots = args.plot
 
-for i in range(n_plots):
-    plt.show()
+for p in range(n_plots):
+    # check override fun-type
     if len(args.fun_type) == 0:
         T = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
     else:
         T = tg.generate_temperature(args.fun_type, t_max = t_max)
+    # inizializza i beta
     y_real = np.zeros(N)
     y_nn = np.zeros(N)
     y_real[0] = y0
     y_nn[0] = y0 
     curr_y = tf.constant([[y0]], dtype = 'float64')
+    # inizializza le S, I
+    I_real = np.zeros(N)
+    I_nn = np.zeros(N)
+    I_real[0] = I0
+    I_nn[0] = I0 
+    curr_I_nn = tf.constant([[I0]], dtype = 'float64')
+    curr_S_nn = tf.constant([[S0]], dtype = 'float64')
+    
     for i in range(N-1):
         next_y = curr_y + dt*g(curr_y, T(t[i]))
         y_nn[i+1] = next_y.numpy()[0][0]
         y_real[i+1] = y_real[i] + dt*f(y_real[i], T(t[i]))
+        next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
+        next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+        I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
+        curr_S_nn = next_S_nn
+        curr_I_nn = next_I_nn
+    # viene calcolata la I_real
+    s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
+    # plot dei beta
     plt.plot(t, y_real)
     plt.plot(t, y_nn)
     plt.legend(["soluzione reale", "soluzione rete"])
+    plt.title('beta, con test set {}'.format(p+1))
+    plt.show()
+    # plot delle I
+    plt.plot(t, I_real)
+    plt.plot(t, I_nn)
+    plt.legend(["soluzione reale", "soluzione rete"])
+    plt.title('infetti, con test set {}'.format(p+1))
+    plt.show()
+    
+    
+
+# plot del training set
+
+if args.plot_train:
+    for k in range(K):
+        y_nn = np.zeros(N)
+        y_nn[0] = y0 
+        curr_y = tf.constant([[y0]], dtype = 'float64')
+        # inizializza le S, I
+        I_real = np.zeros(N)
+        I_nn = np.zeros(N)
+        I_real[0] = I0
+        I_nn[0] = I0 
+        curr_I_nn = tf.constant([[I0]], dtype = 'float64')
+        curr_S_nn = tf.constant([[S0]], dtype = 'float64')
+        # vengono calcolate le I e i beta
+        for i in range(N-1):
+            next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
+            y_nn[i+1] = next_y.numpy()[0][0]
+            next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
+            next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+            I_nn[i+1] = next_I_nn.numpy()[0][0] 
+            curr_y = next_y
+            curr_S_nn = next_S_nn
+            curr_I_nn = next_I_nn
+        # viene calcolata la I_real
+        s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
+        # plot dei beta
+        plt.plot(t, dataset[1, k, :])
+        plt.plot(t, y_nn)
+        plt.legend(["soluzione reale", "soluzione rete"])
+        plt.title('beta, con training set {}'.format(k+1))
+        plt.show()
+        # plot delle I
+        plt.plot(t, I_real)
+        plt.plot(t, I_nn)
+        plt.legend(["soluzione reale", "soluzione rete"])
+        plt.title('infetti, con training set {}'.format(k+1))
+        plt.show()
 
