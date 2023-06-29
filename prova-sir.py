@@ -19,20 +19,23 @@ import pickle
 from matplotlib import pyplot as plt
 tf.keras.backend.set_floatx('float64')
 
+########################
+# definizione dei i flag
+########################
+
 parser=argparse.ArgumentParser()
 parser.add_argument('-t', '--train', help = 'train the network', action = 'store_true')
 parser.add_argument('-i', '--iterations', help = 'override the number of iterations', type = int, default = 0)
 parser.add_argument('-ph','--print-help', action = 'store_true')
 parser.add_argument('-s', '--save-weights', help = 'save the weights in the specified file after the training', default = '')
-# parser.add_argument('-fs', '--file-save', help = 'where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
 parser.add_argument('-l', '--load-weights', help = 'load the weights in the specified file before the training', default = '')
-# parser.add_argument('-fl', '--file-load', help='where to save the weigths. default: saved_weights.pkl', default = 'saved_weights.pkl')
 parser.add_argument('-f', '--file', help = 'specify the file name. default: data.txt', default = 'data.txt')
 parser.add_argument('-p', '--plot', help = 'number of plots after training', default = 0, type = int)
 parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
 parser.add_argument('-ft', '--fun-type', help = 'override the type of temperature functions', default = '')
 parser.add_argument('-v', '--validate', help = 'use a validation set for the training', action = 'store_true')
-parser.add_argument('-pt', '--plot-train', help='plot evolution of beta using the train set', action = 'store_true')
+parser.add_argument('-pt', '--plot-train', help='plot using the train set', action = 'store_true')
+parser.add_argument('-lt', '--load-temp', help = 'load the temperatures', action = 'store_true')
 
 args = parser.parse_args()
 
@@ -56,15 +59,21 @@ with open(args.file, 'r') as file:
 
 learning_rate = float(data_dict['learning_rate'])
 n_input = 2
-n_hidden = 15
+n_hidden = int(data_dict['n_hidden']) # il numero di hidden neurons viene preso dal file data.txt
 n_output = 1
-display_step = 10
+display_step = int(data_dict['display_step'])
 
+####################################
 # vengono generati o caricati i pesi
+####################################
 
 if len(args.load_weights) > 0:
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
+if args.load_temp:
+    nome_file_temp = "LOAD_TEMP.pkl"
+    with open(nome_file_temp, 'rb') as file:
+        dataset, K = pickle.load(file)
         
 
 if args.new_weights:  
@@ -103,7 +112,8 @@ y0 = float(data_dict['beta0'])
 N = int(data_dict['N'])
 t = np.linspace(0, t_max, N)
 dt = t_max/N
-K=int(data_dict['K']) # numero di temperature
+if not args.load_temp: # se le temperature non sono state caricate, il num di temperature è letto da data.txt
+    K=int(data_dict['K']) # numero di temperature
 K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
 temperature= []
 temperature_val = []
@@ -111,7 +121,7 @@ temperature_val = []
 
 # vengono generate le temperature per il training
 
-def f(beta, T):
+def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
     return 5.0*((1.0-T) - beta)
 
 
@@ -123,16 +133,16 @@ data = {
         }
 
 
-if len(args.load_weights) == 0:
+if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non sono stati caricati, vengono generate nuove temp
     for k in range(K):
-        if len(args.fun_type) == 0:
+        if len(args.fun_type) == 0: # override dei tipi di temperature
             T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
         else:
             T = tg.generate_temperature(args.fun_type, t_max=t_max)
         temperature.append(T)
     dataset = dsg.generate_dataset(temperature, data)
 
-if args.validate:
+if args.validate: # vengono generate le temperature da usare nel validation set
     for k in range(K_val):
         if len(args.fun_type) == 0:
             T_val = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
@@ -152,8 +162,8 @@ a=float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
-TOT = S0 + I0 + R0
-sir_0= np.array([S0, I0, R0])
+TOT = S0 + I0 + R0 # popolazione totale
+sir_0 = np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
     I[k, ] = i.copy()
@@ -224,8 +234,10 @@ if args.train:
                 print("loss on validation set: %f" % custom_loss(K_val, val_set))
     except KeyboardInterrupt:
         print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions')
-        
+
+########################      
 # i pesi vengono salvati
+########################
 
 if len(args.save_weights) > 0:
     with open(args.save_weights, 'wb') as file:

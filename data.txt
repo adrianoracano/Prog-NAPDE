@@ -12,3 +12,4 @@ temperature_type: exp
 S0: 10.0
 I0: 0.5
 R0: 0.0
+n_hidden: 15
