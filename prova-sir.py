@@ -17,6 +17,7 @@ import argparse
 import sys
 import pickle
 from matplotlib import pyplot as plt
+tf.keras.backend.set_floatx('float64')
 
 parser=argparse.ArgumentParser()
 parser.add_argument('-t', '--train', help = 'train the network', action = 'store_true')
@@ -67,12 +68,12 @@ if len(args.load_weights) > 0:
 
 if args.new_weights:  
     weights = {
-    'h1': tf.Variable(tf.random.normal([n_input, n_hidden])),
-    'out': tf.Variable(tf.random.normal([n_hidden, n_output]))
+    'h1': tf.Variable(tf.random.normal([n_input, n_hidden], dtype='float64'), dtype='float64'),
+    'out': tf.Variable(tf.random.normal([n_hidden, n_output], dtype='float64'), dtype='float64')
     }
     biases = {
-    'b1': tf.Variable(tf.random.normal([n_hidden])),
-    'out': tf.Variable(tf.random.normal([n_output]))
+    'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+    'out': tf.Variable(tf.random.normal([n_output], dtype='float64'), dtype='float64')
     }
 
 
@@ -90,7 +91,7 @@ def multilayer_perceptron(x):
 
     
 def g(y, v):
-    tv = tf.constant([[v]], dtype = 'float32')
+    tv = tf.constant([[v]], dtype = 'float64')
     x = tf.concat([y, tv], 1)
     return multilayer_perceptron(x)
 
@@ -165,10 +166,10 @@ step_summation = int(data_dict['step_summation'])
 def custom_loss(K, dataset):
     total_summation = []
     for k in range(K):
-        curr_y = tf.constant([[y0]], dtype = 'float32')
+        curr_y = tf.constant([[y0]], dtype = 'float64')
         summation = []
-        curr_I_nn = tf.constant([[sir_0[1]]], dtype = 'float32')
-        curr_S_nn = tf.constant([[sir_0[0]]], dtype= 'float32')
+        curr_I_nn = tf.constant([[sir_0[1]]], dtype = 'float64')
+        curr_S_nn = tf.constant([[sir_0[0]]], dtype= 'float64')
         for i in range(N-1):
             next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
             next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
@@ -232,7 +233,7 @@ for i in range(n_plots):
     y_nn = np.zeros(N)
     y_real[0] = y0
     y_nn[0] = y0 
-    curr_y = tf.constant([[y0]], dtype = 'float32')
+    curr_y = tf.constant([[y0]], dtype = 'float64')
     for i in range(N-1):
         next_y = curr_y + dt*g(curr_y, T(t[i]))
         y_nn[i+1] = next_y.numpy()[0][0]
