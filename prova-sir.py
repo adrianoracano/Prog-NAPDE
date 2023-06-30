@@ -20,7 +20,7 @@ from matplotlib import pyplot as plt
 tf.keras.backend.set_floatx('float64')
 
 ########################
-# definizione dei i flag
+# definizione dei flag
 ########################
 
 parser=argparse.ArgumentParser()
@@ -66,14 +66,14 @@ display_step = int(data_dict['display_step'])
 ####################################
 # vengono generati o caricati i pesi
 ####################################
-
+K_test = 0 # solo una variabile utile per i plot finali
 if len(args.load_weights) > 0:
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
 if args.load_temp:
     nome_file_temp = "LOAD_TEMP.pkl"
     with open(nome_file_temp, 'rb') as file:
-        dataset, K = pickle.load(file)
+        dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         
 
 if args.new_weights:  
@@ -142,7 +142,8 @@ if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non
         temperature.append(T)
     dataset = dsg.generate_dataset(temperature, data)
 
-if args.validate: # vengono generate le temperature da usare nel validation set
+
+if args.validate and not args.load_temp: # vengono generate le temperature da usare nel validation set
     for k in range(K_val):
         if len(args.fun_type) == 0:
             T_val = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
@@ -248,8 +249,10 @@ if len(args.save_weights) > 0:
 ######################
 
 # plot del test set
-
-n_plots = args.plot
+if not args.load_temp:
+    n_plots = args.plot
+else:
+    n_plots = K_test
 
 for p in range(n_plots):
     # check override fun-type
@@ -272,29 +275,34 @@ for p in range(n_plots):
     curr_S_nn = tf.constant([[S0]], dtype = 'float64')
     
     for i in range(N-1):
-        next_y = curr_y + dt*g(curr_y, T(t[i]))
+        if not args.load_temp:
+            curr_temp = T(t[i])
+        else: # se le temperature sono state caricate non viene usata la T generata casualmente
+            curr_temp = test_set[0, p, i]
+        next_y = curr_y + dt*g(curr_y, curr_temp)
         y_nn[i+1] = next_y.numpy()[0][0]
-        y_real[i+1] = y_real[i] + dt*f(y_real[i], T(t[i]))
+        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
         next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
         next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
-    # viene calcolata la I_real
-    s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
-    # plot dei beta
-    plt.plot(t, y_real)
-    plt.plot(t, y_nn)
-    plt.legend(["soluzione reale", "soluzione rete"])
-    plt.title('beta, con test set {}'.format(p+1))
-    plt.show()
-    # plot delle I
-    plt.plot(t, I_real)
-    plt.plot(t, I_nn)
-    plt.legend(["soluzione reale", "soluzione rete"])
-    plt.title('infetti, con test set {}'.format(p+1))
-    plt.show()
+    if p % 5 == 0:
+        # viene calcolata la I_real
+        s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
+        # plot dei beta
+        plt.plot(t, y_real)
+        plt.plot(t, y_nn)
+        plt.legend(["soluzione reale", "soluzione rete"])
+        plt.title('beta, con test set {}'.format(p+1))
+        plt.show()
+        # plot delle I
+        plt.plot(t, I_real)
+        plt.plot(t, I_nn)
+        plt.legend(["soluzione reale", "soluzione rete"])
+        plt.title('infetti, con test set {}'.format(p+1))
+        plt.show()
     
     
 
@@ -322,18 +330,19 @@ if args.plot_train:
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
-        # viene calcolata la I_real
-        s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
-        # plot dei beta
-        plt.plot(t, dataset[1, k, :])
-        plt.plot(t, y_nn)
-        plt.legend(["soluzione reale", "soluzione rete"])
-        plt.title('beta, con training set {}'.format(k+1))
-        plt.show()
-        # plot delle I
-        plt.plot(t, I_real)
-        plt.plot(t, I_nn)
-        plt.legend(["soluzione reale", "soluzione rete"])
-        plt.title('infetti, con training set {}'.format(k+1))
-        plt.show()
+        if k % 5 == 0:
+            # viene calcolata la I_real
+            s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
+            # plot dei beta
+            plt.plot(t, dataset[1, k, :])
+            plt.plot(t, y_nn)
+            plt.legend(["soluzione reale", "soluzione rete"])
+            plt.title('beta, con training set {}'.format(k+1))
+            plt.show()
+            # plot delle I
+            plt.plot(t, I_real)
+            plt.plot(t, I_nn)
+            plt.legend(["soluzione reale", "soluzione rete"])
+            plt.title('infetti, con training set {}'.format(k+1))
+            plt.show()
 
