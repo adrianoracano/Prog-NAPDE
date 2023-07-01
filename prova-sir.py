@@ -232,7 +232,7 @@ if args.train:
           if i % display_step == 0:
             print("iterazione %i:" % i)
             loss_history[i_history] = custom_loss(K, dataset)
-            print("loss on training set: %f " % loss_history[i])
+            print("loss on training set: %f " % loss_history[i_history])
             if args.validate:
                 loss_history_val[i_history] = custom_loss(K_val, val_set)
                 print("loss on validation set: %f" % loss_history_val[i_history])
