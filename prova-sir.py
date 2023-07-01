@@ -125,7 +125,7 @@ def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
     return 5.0*((1.0-T) - beta)
 
 
-data = {
+data = {  # questo dict viene usato per generare il dataset
     'beta0' : np.array([y0]),
     'f' : f,
     't_max' : t_max,
@@ -159,7 +159,7 @@ if args.validate and not args.load_temp: # vengono generate le temperature da us
 I = np.zeros([K, N]) #da usare per gli infetti
 if args.validate:
     I_val = np.zeros([K_val, N]) # da usare per il validation set
-a=float(data_dict['alpha'])
+a = float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
@@ -192,7 +192,7 @@ def custom_loss(K, dataset):
             next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
             next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
             if i % step_summation == 0:
-                summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
+                summation.append( ( ( next_I_nn - I[k, i+1] ) )**2 )  
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
@@ -222,6 +222,7 @@ display_step = int(data_dict['display_step'])
 
 if args.train:
     loss_history = np.zeros(int(training_steps/display_step))
+    i_history = 0
     if args.validate:
         loss_history_val = np.zeros(int(training_steps/display_step))
     
@@ -230,9 +231,12 @@ if args.train:
           train_step(K, dataset)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            print("loss on training set: %f " % custom_loss(K, dataset))
+            loss_history[i_history] = custom_loss(K, dataset)
+            print("loss on training set: %f " % loss_history[i])
             if args.validate:
-                print("loss on validation set: %f" % custom_loss(K_val, val_set))
+                loss_history_val[i_history] = custom_loss(K_val, val_set)
+                print("loss on validation set: %f" % loss_history_val[i_history])
+            i_history = i_history + 1
     except KeyboardInterrupt:
         print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions')
 
@@ -345,4 +349,18 @@ if args.plot_train:
             plt.legend(["soluzione reale", "soluzione rete"])
             plt.title('infetti, con training set {}'.format(k+1))
             plt.show()
+
+# plot della loss
+
+it = np.arange(0, training_steps, display_step)
+plt.plot(it, loss_history)
+plt.plot(it, loss_history_val)
+plt.legend(["loss training set", "loss validation set"])
+plt.title('evoluzione della loss')
+plt.show()
+
+
+
+
+
 
