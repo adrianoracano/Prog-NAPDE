@@ -18,3 +18,44 @@ I0: 0.5
 R0: 0.0
 iterazioni eseguite: 220
 Il risultato ottenuto è buono
+
+
+# PROVE VERE
+In prova_seria_1.pkl ci sono 180 iterazioni (con loss costante), e con i seguenti parametri:
+
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 10.0
+I0: 0.5
+R0: 0.0
+n_hidden: 15
+
+In prova_seria_2.pkl ci sono 120 iterazioni (con loss costante), e con i seguenti parametri:
+
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 10.0
+I0: 0.5
+R0: 0.0
+n_hidden: 15
+
+
+

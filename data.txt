@@ -1,5 +1,5 @@
 step_summation: 1
-learning_rate: 0.005
+learning_rate: 0.001
 t_max: 1.0
 beta0: 0.05
 K: 5

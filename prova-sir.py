@@ -68,15 +68,18 @@ display_step = int(data_dict['display_step'])
 ####################################
 K_test = 0 # solo una variabile utile per i plot finali
 if len(args.load_weights) > 0:
+    print("Loading weights...")
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
 if args.load_temp:
+    print("Loading the datasets...")
     nome_file_temp = "LOAD_TEMP.pkl"
     with open(nome_file_temp, 'rb') as file:
         dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         
 
 if args.new_weights:  
+    print("Generating new weights...")
     weights = {
     'h1': tf.Variable(tf.random.normal([n_input, n_hidden], dtype='float64'), dtype='float64'),
     'out': tf.Variable(tf.random.normal([n_hidden, n_output], dtype='float64'), dtype='float64')
@@ -221,6 +224,7 @@ display_step = int(data_dict['display_step'])
 #####################
 
 if args.train:
+    print("Starting the training...")
     loss_history = np.zeros(int(training_steps/display_step))
     i_history = 0
     if args.validate:
@@ -245,6 +249,7 @@ if args.train:
 ########################
 
 if len(args.save_weights) > 0:
+    print("Saving the weights...")
     with open(args.save_weights, 'wb') as file:
         pickle.dump((weights, biases, dataset), file)
 
