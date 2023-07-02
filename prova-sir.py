@@ -46,7 +46,7 @@ if args.default:
     args.validate = True
     args.load_temp = True
     
-if len(args.averwrite)>0:
+if len(args.overwrite)>0:
     args.save_weights = args.overwrite
     args.load_weights = args.overwrite
 
