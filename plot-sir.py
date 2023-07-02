@@ -5,7 +5,7 @@ Created on Sun May 21 17:14:10 2023
 @author: alean
 """
 
-T = tg.generate_temperature("exp")
+T = tg.generate_temperature(data_dict["temperature_type"])
 y_real = np.zeros(N)
 y_nn = np.zeros(N)
 y_real[0] = y0
