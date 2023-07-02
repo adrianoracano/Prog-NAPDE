@@ -36,8 +36,23 @@ parser.add_argument('-ft', '--fun-type', help = 'override the type of temperatur
 parser.add_argument('-v', '--validate', help = 'use a validation set for the training', action = 'store_true')
 parser.add_argument('-pt', '--plot-train', help='plot using the train set', action = 'store_true')
 parser.add_argument('-lt', '--load-temp', help = 'load the temperatures', action = 'store_true')
+parser.add_argument('-d', '--default',  help = 'activate flags: --train, --validate, --load-temp', action = 'store_true')
+parser.add_argument('-o', '--overwrite', help = 'save and load the weights from the specified file', default = '')
 
 args = parser.parse_args()
+
+if args.default:
+    args.train = True
+    args.validate = True
+    args.load_temp = True
+    
+if len(args.averwrite)>0:
+    args.save_weights = args.overwrite
+    args.load_weights = args.overwrite
+
+if len(args.load_weights)>0 and args.new_weights:
+    print("Cannot generate new weights and loading existing ones. Stopping execution..")
+    sys.exit()
 
 # print-help da completare
 
