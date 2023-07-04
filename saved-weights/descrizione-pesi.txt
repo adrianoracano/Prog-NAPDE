@@ -58,4 +58,60 @@ R0: 0.0
 n_hidden: 15
 
 
+In prova_seria_3.pkl ci sono 450 iterazioni, con i seguenti parametri:
+
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 10.0
+I0: 0.5
+R0: 0.0
+n_hidden: 15
+loss_history, loss_history_val salvati in saved-weights/loss_prova_seria_3.pkl, loss_prova_seria_3_parte_2.pkl
+
+In prova seria 4 ci sono 220 iterazioni (circa) con:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 10.0
+I0: 0.5
+R0: 0.0
+n_hidden: 15
+le loss sono in saved-weights/loss_prova_seria_4.pkl
+la loss è definita con TOT
+
+In prova seria 5 ci sono 200 iterazioni con:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 15
+loss con TOT
+
 

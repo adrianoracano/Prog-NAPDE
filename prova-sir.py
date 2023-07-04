@@ -83,18 +83,18 @@ display_step = int(data_dict['display_step'])
 ####################################
 K_test = 0 # solo una variabile utile per i plot finali
 if len(args.load_weights) > 0:
-    print("Loading weights...")
+    print("Loading weights from "+args.load_weights+"...\n")
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
 if args.load_temp:
-    print("Loading the datasets...")
+    print("Loading the datasets...\n")
     nome_file_temp = "LOAD_TEMP.pkl"
     with open(nome_file_temp, 'rb') as file:
         dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         
 
 if args.new_weights:  
-    print("Generating new weights...")
+    print("Generating new weights...\n")
     weights = {
     'h1': tf.Variable(tf.random.normal([n_input, n_hidden], dtype='float64'), dtype='float64'),
     'out': tf.Variable(tf.random.normal([n_hidden, n_output], dtype='float64'), dtype='float64')
@@ -210,7 +210,7 @@ def custom_loss(K, dataset):
             next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
             next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
             if i % step_summation == 0:
-                summation.append( ( ( next_I_nn - I[k, i+1] ) )**2 )  
+                summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
@@ -239,7 +239,7 @@ display_step = int(data_dict['display_step'])
 #####################
 
 if args.train:
-    print("Starting the training...")
+    print("Starting the training...\n")
     loss_history = np.zeros(int(training_steps/display_step))
     i_history = 0
     if args.validate:
@@ -257,14 +257,14 @@ if args.train:
                 print("loss on validation set: %f" % loss_history_val[i_history])
             i_history = i_history + 1
     except KeyboardInterrupt:
-        print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions')
+        print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
 
 ########################      
 # i pesi vengono salvati
 ########################
 
 if len(args.save_weights) > 0:
-    print("Saving the weights...")
+    print("Saving the weights in "+args.save_weights+"...\n")
     with open(args.save_weights, 'wb') as file:
         pickle.dump((weights, biases, dataset), file)
 
