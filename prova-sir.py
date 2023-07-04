@@ -12,11 +12,12 @@ import tensorflow as tf
 import numpy as np
 import MyTemperatureGenerator as tg
 import MyDatasetGenerator as dsg
-import HerRungeKutta as hrk
+from utilities import HerRungeKutta as hrk
 import argparse
 import sys
 import pickle
 from matplotlib import pyplot as plt
+from utilities import SirHelperFunctions as shf
 tf.keras.backend.set_floatx('float64')
 
 ########################
@@ -207,8 +208,10 @@ def custom_loss(K, dataset):
         curr_S_nn = tf.constant([[sir_0[0]]], dtype= 'float64')
         for i in range(N-1):
             next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
-            next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-            next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+            
+            # next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
+            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
+                                                        curr_I_nn, curr_y, next_y, dt, a)
             if i % step_summation == 0:
                 summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
             curr_y = next_y
@@ -276,7 +279,7 @@ if len(args.save_weights) > 0:
 if not args.load_temp:
     n_plots = args.plot
 else:
-    n_plots = K_test
+    n_plots = args.plot
 
 for p in range(n_plots):
     # check override fun-type
@@ -306,13 +309,14 @@ for p in range(n_plots):
         next_y = curr_y + dt*g(curr_y, curr_temp)
         y_nn[i+1] = next_y.numpy()[0][0]
         y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
-        next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-        next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+        # viene usato runge kutta per calcolare uno step della soluzione
+        next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
+                                                    curr_y, next_y, dt, a)
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
-    if p % 5 == 0:
+    if p % 1 == 0:
         # viene calcolata la I_real
         s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
         # plot dei beta
