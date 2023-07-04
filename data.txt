@@ -13,3 +13,4 @@ S0: 400.0
 I0: 10.0
 R0: 0.0
 n_hidden: 15
+solver: ea

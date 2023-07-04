@@ -60,8 +60,10 @@ if len(args.load_weights)>0 and args.new_weights:
 if args.print_help:
     print('scrivere help per lo script')
     sys.exit()
-
+    
+###############################
 # i dati vengono presi dal file
+###############################
 
 data_dict = {}
 
@@ -78,6 +80,7 @@ n_input = 2
 n_hidden = int(data_dict['n_hidden']) # il numero di hidden neurons viene preso dal file data.txt
 n_output = 1
 display_step = int(data_dict['display_step'])
+solver = data_dict['solver'] # il tipo di metodo usato per il training: ea oppure rk
 
 ####################################
 # vengono generati o caricati i pesi
@@ -209,9 +212,11 @@ def custom_loss(K, dataset):
         for i in range(N-1):
             next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
             
-            # next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
-            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
-                                                        curr_I_nn, curr_y, next_y, dt, a)
+            if solver == 'ea':
+                next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
+            if solver == 'rk':
+                next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
+                                                            curr_I_nn, curr_y, next_y, dt, a)
             if i % step_summation == 0:
                 summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
             curr_y = next_y
@@ -279,7 +284,7 @@ if len(args.save_weights) > 0:
 if not args.load_temp:
     n_plots = args.plot
 else:
-    n_plots = args.plot
+    n_plots = K_test
 
 for p in range(n_plots):
     # check override fun-type
@@ -309,14 +314,17 @@ for p in range(n_plots):
         next_y = curr_y + dt*g(curr_y, curr_temp)
         y_nn[i+1] = next_y.numpy()[0][0]
         y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
-        # viene usato runge kutta per calcolare uno step della soluzione
-        next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
-                                                    curr_y, next_y, dt, a)
+        # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
+        if solver == 'rk':
+            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
+                                                        curr_y, next_y, dt, a)
+        if solver == 'ea':
+            next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
-    if p % 1 == 0:
+    if p % 5 == 0:
         # viene calcolata la I_real
         s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
         # plot dei beta
@@ -352,12 +360,15 @@ if args.plot_train:
         for i in range(N-1):
             next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
             y_nn[i+1] = next_y.numpy()[0][0]
-            next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-            next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
-            I_nn[i+1] = next_I_nn.numpy()[0][0] 
+            if solver == 'rk':
+                next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
+                                                            curr_y, next_y, dt, a)
+            if solver == 'ea':
+                next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
+            I_nn[i+1] = next_I_nn.numpy()[0][0]
         if k % 5 == 0:
             # viene calcolata la I_real
             s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
