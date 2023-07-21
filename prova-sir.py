@@ -137,7 +137,8 @@ def multilayer_perceptron(x):
 
     
 def g(y, v):
-    tv = tf.constant([[v]], dtype = 'float64')
+    v.shape=(v.shape[0], 1)
+    tv = tf.constant(v, dtype = 'float64')
     x = tf.concat([y, tv], 1)
     return multilayer_perceptron(x)
 
@@ -217,29 +218,24 @@ step_summation = int(data_dict['step_summation'])
 ########################
 
 def custom_loss(K, dataset):
-    total_summation = []
-    for k in range(K):
-        curr_y = tf.constant([[y0]], dtype = 'float64')
-        summation = []
-        curr_I_nn = tf.constant([[sir_0[1]]], dtype = 'float64')
-        curr_S_nn = tf.constant([[sir_0[0]]], dtype= 'float64')
-        for i in range(N-1):
-            next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
-            
-            if solver == 'ea':
-                next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
-            if solver == 'rk':
-                next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
-                                                            curr_I_nn, curr_y, next_y, dt, a)
-            if i % step_summation == 0:
-                summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
-            curr_y = next_y
-            curr_S_nn = next_S_nn
-            curr_I_nn = next_I_nn
-        total_summation.append(tf.reduce_sum(summation))
-        #print(tf.reduce_sum(total_summation))
-    return tf.reduce_mean(total_summation)
-    
+    summation=[]
+    curr_beta = tf.constant( y0*np.ones([K, 1], dtype='float64'), dtype='float64')
+    curr_I_nn = tf.constant( sir_0[1]*np.ones([K, 1], dtype='float64'), dtype='float64')
+    curr_S_nn = tf.constant( sir_0[0]*np.ones([K, 1], dtype='float64'), dtype='float64')
+    for i in range(N-1):
+        next_beta = curr_beta + dt*g(curr_beta, dataset[0,:,i])
+        if solver == 'ea':
+            next_S_nn = curr_S_nn - dt*curr_beta*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + dt*curr_beta*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
+        if solver == 'rk':
+            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
+                                                        curr_I_nn, curr_beta, next_beta, dt, a)
+        if i % step_summation == 0:
+            summation.append( tf.reduce_mean(( ( next_I_nn - I[:, i+1] )/TOT )**2 ))  
+        curr_beta = next_beta
+        curr_S_nn = next_S_nn
+        curr_I_nn = next_I_nn
+    return tf.reduce_sum(summation)
 
 def train_step(K, dataset):
     with tf.GradientTape() as tape:
@@ -324,7 +320,7 @@ for p in range(n_plots):
         if not args.load_temp:
             curr_temp = T(t[i])
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
-            curr_temp = test_set[0, p, i]
+            curr_temp = np.array([test_set[0, p, i]], dtype='float64')
         next_y = curr_y + dt*g(curr_y, curr_temp)
         y_nn[i+1] = next_y.numpy()[0][0]
         y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
@@ -333,7 +329,8 @@ for p in range(n_plots):
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                         curr_y, next_y, dt, a)
         if solver == 'ea':
-            next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
+            next_S_nn = curr_S_nn - dt*curr_y*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + dt*curr_y*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
