@@ -7,8 +7,8 @@ Created on Tue Jul  4 11:30:45 2023
 import tensorflow as tf
 
 def forward_euler_step(curr_S_nn, curr_I_nn, curr_beta, dt, a):
-    next_S_nn = curr_S_nn - dt*tf.matmul(curr_beta, tf.matmul(curr_S_nn, curr_I_nn))
-    next_I_nn = curr_I_nn + dt*(tf.matmul(curr_beta, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+    next_S_nn = curr_S_nn - dt*curr_beta*curr_S_nn*curr_I_nn
+    next_I_nn = curr_I_nn + dt*curr_beta*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
     return next_S_nn, next_I_nn
 """
 next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))

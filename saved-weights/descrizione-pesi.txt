@@ -114,4 +114,185 @@ R0: 0.0
 n_hidden: 15
 loss con TOT
 
+In prova seria 6 ci sono 40 iterazioni (circa) con:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 5
+K_val: 3
+N: 60
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 15
+solver: rk
 
+In please_funziona.pkl ci sono 170 iterazioni con:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 35
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 15
+solver: ea
+loss con TOT e senza usare --load-temp
+loss train arrivata a 1.92
+loss val arrivata a 2.77
+fatte altre 100 iterazioni.
+ora la loss train è a 1.495
+la loss val è a 4.04
+si comincia a vedere overfitting. I grafici cominciano a essere decenti
+altre 40 iterazioni:
+loss on training set: 0.999736 
+loss on validation set: 2.634095
+altre 100 iterazioni:
+loss on training set: 0.594487 
+loss on validation set: 5.129516
+altre 110 iterazioni:
+loss on training set: 0.374454 
+loss on validation set: 2.931597
+altre 80 iterazioni:
+loss on training set: 0.273611 
+loss on validation set: 3.705752
+
+
+
+in prova_seria_8:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 35
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+
+40 iterazioni
+loss iniziale:
+loss on training set: 3.629003 
+loss on validation set: 3.055194
+loss dopo le iterazioni:
+loss on training set: 2.794325 
+loss on validation set: 3.313936
+altre 130 iterazioni:
+loss on training set: 0.471205 
+loss on validation set: 4.094968
+altre 110 iterazioni:
+loss on training set: 0.129817 
+loss on validation set: 3.873688 --> loss on validation set: 4.154950
+si comincia a vedere overfitting!
+altre 100 iterazioni:
+loss on training set: 0.083142 
+loss on validation set: 2.910793 --> loss on validation set: 2.900703
+
+In please_funziona_parte2:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 35
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+
+vienee ripreso il training di please_funziona, ma utilizzando adesso adam invece di sdg
+altre 40 iterazioni:
+loss on training set: 0.123776 
+loss on validation set: 3.353890
+altre 80 iterazioni:
+loss on training set: 0.070751 
+loss on validation set: 4.638606 --> loss on validation set: 4.318203
+
+
+in prova_seria_9:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 35
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+
+con Adam, pessimi grafici. Training con --load-temp
+iterazione 0:
+loss on training set: 1.951224 
+loss on validation set: 1.950746
+iterazione 70:
+loss on training set: 0.517992 
+loss on validation set: 0.420075
+altre 50 iterazioni:
+iterazione 50:
+loss on training set: 0.166793 
+loss on validation set: 0.524045
+altre 50 iterazioni:
+loss on training set: 0.031353 
+loss on validation set: 0.643758
+
+
+in prova seria 10: adam
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 35
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 10.0
+R0: 0.0
+n_hidden: 45
+solver: ea
+con --load-temp
+iterazione 0:
+loss on training set: 5.287577 
+loss on validation set: 5.622061
+iterazione 90:
+loss on training set: 0.679837 
+loss on validation set: 0.419012
+altre 40 iterazioni:
+iterazione 40:
+loss on training set: 0.278965 
+loss on validation set: 0.457693

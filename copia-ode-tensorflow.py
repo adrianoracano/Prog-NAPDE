@@ -61,7 +61,7 @@ def train_step():
     loss = custom_loss()
   trainable_variables=list(weights.values())+list(biases.values())
   gradients = tape.gradient(loss, trainable_variables)
-  optimizer.apply_gradients(zip(gradients, trainable_variables))
+  optimizer.apply_gradients(zip(gradients, trainable_variables)
 # Training the Model:
 for i in range(training_steps):
   train_step()
