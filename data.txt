@@ -4,7 +4,7 @@ t_max: 1.0
 beta0: 0.05
 K: 5
 K_val: 3
-N: 60
+N: 220
 alpha: 3.0
 training_steps: 500
 display_step: 10
