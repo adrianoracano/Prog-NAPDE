@@ -52,7 +52,7 @@ if len(args.overwrite)>0:
     args.load_weights = args.overwrite
 
 if len(args.load_weights)>0 and args.new_weights:
-    print("Cannot generate new weights and loading existing ones. Stopping execution..")
+    print("Cannot generate new weights and loading existing ones. Aborting..\n")
     sys.exit()
 
 # print-help da completare
@@ -94,9 +94,14 @@ N = int(data_dict['N']) # in base a quanto vale N vengono caricate le temperatur
 if args.load_temp:
     print("Loading the datasets...\n")
     if N == 60:
-        nome_file_temp = "LOAD_TEMP.pkl"  # in LOAD_TEMP.pkl c'è un dataset generato con N=60
+        nome_file_temp = "datasets/LOAD_TEMP.pkl"  # in LOAD_TEMP.pkl c'è un dataset generato con N=60
+        print("Dataset LOAD_TEMP loaded...\n")
     elif N == 150:
-        nome_file_temp = 'LOAD_TEMP_150.pkl' # per LOAD_TEMP_150.pkl serve N=150
+        nome_file_temp = 'datasets/LOAD_TEMP_150.pkl' # per LOAD_TEMP_150.pkl serve N=150
+        print("Dataset LOAD_TEMP_150 loaded...\n")
+    elif N == 220:
+        nome_file_temp = "datasets/LOAD_TEMP.pkl"
+        print("Dataset LOAD_TEMP_220 loaded...\n")
     else:
         print('N not compatible with the option --load-temp. Aborting...\n')
         sys.exit()
@@ -163,6 +168,7 @@ data = {  # questo dict viene usato per generare il dataset
 
 
 if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non sono stati caricati, vengono generate nuove temp
+    print("Generating new temperatures for train set...\n")    
     for k in range(K):
         if len(args.fun_type) == 0: # override dei tipi di temperature
             T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
@@ -173,7 +179,7 @@ if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non
 
 
 if args.validate and not args.load_temp: # vengono generate le temperature da usare nel validation set
-    print("Generating new temperatures...\n")
+    print("Generating new temperatures for validation set...\n")
     for k in range(K_val):
         if len(args.fun_type) == 0:
             T_val = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
