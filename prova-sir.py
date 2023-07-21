@@ -100,7 +100,7 @@ if args.load_temp:
         nome_file_temp = 'datasets/LOAD_TEMP_150.pkl' # per LOAD_TEMP_150.pkl serve N=150
         print("Dataset LOAD_TEMP_150 loaded...\n")
     elif N == 220:
-        nome_file_temp = "datasets/LOAD_TEMP.pkl"
+        nome_file_temp = "datasets/LOAD_TEMP_220.pkl"
         print("Dataset LOAD_TEMP_220 loaded...\n")
     else:
         print('N not compatible with the option --load-temp. Aborting...\n')
