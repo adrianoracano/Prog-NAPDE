@@ -149,7 +149,7 @@ t = np.linspace(0, t_max, N)
 dt = t_max/N
 if not args.load_temp: # se le temperature non sono state caricate, il num di temperature è letto da data.txt
     K=int(data_dict['K']) # numero di temperature
-K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
+    K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
 temperature= []
 temperature_val = []
 
