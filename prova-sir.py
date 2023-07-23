@@ -100,7 +100,7 @@ if args.load_temp:
         nome_file_temp = 'datasets/LOAD_TEMP_150.pkl' # per LOAD_TEMP_150.pkl serve N=150
         print("Dataset LOAD_TEMP_150 loaded...\n")
     elif N == 220:
-        nome_file_temp = "datasets/LOAD_TEMP.pkl"
+        nome_file_temp = "datasets/LOAD_TEMP_220.pkl"
         print("Dataset LOAD_TEMP_220 loaded...\n")
     else:
         print('N not compatible with the option --load-temp. Aborting...\n')
@@ -216,7 +216,7 @@ step_summation = int(data_dict['step_summation'])
 # definizione della loss
 ########################
 
-def custom_loss(K, dataset):
+def custom_loss(K, dataset, I):
     total_summation = []
     for k in range(K):
         curr_y = tf.constant([[y0]], dtype = 'float64')
@@ -241,9 +241,9 @@ def custom_loss(K, dataset):
     return tf.reduce_mean(total_summation)
     
 
-def train_step(K, dataset):
+def train_step(K,dataset, I):
     with tf.GradientTape() as tape:
-        loss = custom_loss(K, dataset)
+        loss = custom_loss(K, dataset, I)
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
@@ -269,13 +269,13 @@ if args.train:
     
     try:
         for i in range(training_steps):
-          train_step(K, dataset)
+          train_step(K, dataset, I)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            loss_history[i_history] = custom_loss(K, dataset)
+            loss_history[i_history] = custom_loss(K, dataset, I)
             print("loss on training set: %f " % loss_history[i_history])
             if args.validate:
-                loss_history_val[i_history] = custom_loss(K_val, val_set)
+                loss_history_val[i_history] = custom_loss(K_val, val_set, I_val)
                 print("loss on validation set: %f" % loss_history_val[i_history])
             i_history = i_history + 1
     except KeyboardInterrupt:
