@@ -217,7 +217,8 @@ step_summation = int(data_dict['step_summation'])
 # definizione della loss
 ########################
 
-def custom_loss(K, dataset):
+def custom_loss(K, dataset, I):
+    
     summation=[]
     curr_beta = tf.constant( y0*np.ones([K, 1], dtype='float64'), dtype='float64')
     curr_I_nn = tf.constant( sir_0[1]*np.ones([K, 1], dtype='float64'), dtype='float64')
@@ -231,15 +232,17 @@ def custom_loss(K, dataset):
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
                                                         curr_I_nn, curr_beta, next_beta, dt, a)
         if i % step_summation == 0:
-            summation.append( tf.reduce_mean(( ( next_I_nn - I[:, i+1] )/TOT )**2 ))  
+            I_exact=I[:,i+1]
+            I_exact.shape = (I_exact.shape[0], 1)
+            summation.append( tf.reduce_mean(( ( next_I_nn - I_exact )/TOT )**2 ))    
         curr_beta = next_beta
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
     return tf.reduce_sum(summation)
 
-def train_step(K, dataset):
+def train_step(K, dataset, I):
     with tf.GradientTape() as tape:
-        loss = custom_loss(K, dataset)
+        loss = custom_loss(K, dataset, I)
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
@@ -265,13 +268,13 @@ if args.train:
     
     try:
         for i in range(training_steps):
-          train_step(K, dataset)
+          train_step(K, dataset, I)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            loss_history[i_history] = custom_loss(K, dataset)
+            loss_history[i_history] = custom_loss(K, dataset, I)
             print("loss on training set: %f " % loss_history[i_history])
             if args.validate:
-                loss_history_val[i_history] = custom_loss(K_val, val_set)
+                loss_history_val[i_history] = custom_loss(K_val, val_set, I_val)
                 print("loss on validation set: %f" % loss_history_val[i_history])
             i_history = i_history + 1
     except KeyboardInterrupt:
@@ -318,7 +321,7 @@ for p in range(n_plots):
     
     for i in range(N-1):
         if not args.load_temp:
-            curr_temp = T(t[i])
+            curr_temp = np.array([T(t[i])], dtype='float64')
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
             curr_temp = np.array([test_set[0, p, i]], dtype='float64')
         next_y = curr_y + dt*g(curr_y, curr_temp)
@@ -369,13 +372,15 @@ if args.plot_train:
         curr_S_nn = tf.constant([[S0]], dtype = 'float64')
         # vengono calcolate le I e i beta
         for i in range(N-1):
-            next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
+            T_curr = np.array([dataset[0, k, i]], dtype='float64')
+            next_y = curr_y + dt*g(curr_y, T_curr)
             y_nn[i+1] = next_y.numpy()[0][0]
             if solver == 'rk':
                 next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                             curr_y, next_y, dt, a)
             if solver == 'ea':
-                next_S_nn, next_I_nn = shf.forward_euler_step(curr_S_nn, curr_I_nn, curr_y, dt, a)
+                next_S_nn = curr_S_nn - dt*curr_y*curr_S_nn*curr_I_nn
+                next_I_nn = curr_I_nn + dt*curr_y*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn

@@ -114,4 +114,102 @@ R0: 0.0
 n_hidden: 15
 loss con TOT
 
+In prova220_1:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 800.0
+I0: 100.0
+R0: 0.0
+n_hidden: 60
+solver: ea
+Plot terribili, 1200 iterazioni
+iterazione 0:
+loss on training set: 19.490758 
+loss on validation set: 15.582750
+iterazione 1200:
+loss on training set: 0.062235 
+loss on validation set: 0.066565
+
+in prova150_1.pkl:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 80.0
+I0: 5.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 11.337479 
+loss on validation set: 12.291323
+iterazione 1490:
+loss on training set: 0.019859 
+loss on validation set: 0.019214
+plot decenti ma non perfetti (da caricare)
+
+In prova150_2 1000 iterazioni (ottimi risultati!):
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 80.0
+I0: 5.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 1.156047 
+loss on validation set: 0.464158
+iterazione 1000:
+loss on training set: 0.003708 
+loss on validation set: 0.003184
+
+in prova220_2.pkl 600 iterazioni (brutti grafici)
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 20.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 2.165593 
+loss on validation set: 1.781973
+iterazione 650:
+loss on training set: 0.015838 
+loss on validation set: 0.015575
+
 
