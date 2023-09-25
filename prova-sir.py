@@ -122,8 +122,8 @@ if args.new_weights:
 
 
 # Stochastic gradient descent optimizer.
+# optimizer = tf.optimizers.SGD(learning_rate)
 optimizer = tf.optimizers.Adam(learning_rate)
-# optimizer = tf.optimizers.Adam(learning_rate)
 
 ##############
 # Create model
