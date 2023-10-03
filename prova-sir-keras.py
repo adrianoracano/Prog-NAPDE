@@ -115,9 +115,12 @@ if args.load_temp:
     elif N == 150:
         nome_file_temp = 'datasets/LOAD_TEMP_150.pkl'  # per LOAD_TEMP_150.pkl serve N=150
         print("Dataset LOAD_TEMP_150 loaded...\n")
-    elif N == 220:
+    elif N == 220 and data_dict["mixed"] == "no": 
         nome_file_temp = "datasets/LOAD_TEMP_220.pkl"
         print("Dataset LOAD_TEMP_220 loaded...\n")
+    elif N == 220 and data_dict["mixed"] == "yes":
+        nome_file_temp = "datasets/LOAD_TEMP_220_MIXED.pkl"
+        print("Dataset LOAD_TEMP_220_MIXED loaded...\n")
     else:
         print('N not compatible with the option --load-temp. Aborting...\n')
         sys.exit()
