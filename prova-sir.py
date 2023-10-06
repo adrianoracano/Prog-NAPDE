@@ -91,25 +91,21 @@ if len(args.load_weights) > 0:
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
 N = int(data_dict['N']) # in base a quanto vale N vengono caricate le temperature giuste
+
 if args.load_temp:
-    print("Loading the datasets...\n")
-    if N == 60:
-        nome_file_temp = "datasets/LOAD_TEMP.pkl"  # in LOAD_TEMP.pkl c'è un dataset generato con N=60
-        print("Dataset LOAD_TEMP loaded...\n")
-    elif N == 150:
-        nome_file_temp = 'datasets/LOAD_TEMP_150.pkl' # per LOAD_TEMP_150.pkl serve N=150
-        print("Dataset LOAD_TEMP_150 loaded...\n")
-    elif N == 220 and data_dict["mixed"] == "no":
-        nome_file_temp = "datasets/LOAD_TEMP_220.pkl"
-        print("Dataset LOAD_TEMP_220 loaded...\n")
-    elif N == 220 and data_dict["mixed"] == "yes":
-        nome_file_temp = "datasets/LOAD_TEMP_220_MIXED.pkl"
-        print("Dataset LOAD_TEMP_220_MIXED loaded...\n")
-    else:
-        print('N not compatible with the option --load-temp. Aborting...\n')
+    try:
+        nome_file_temp = 'LOAD_TEMP_N_'+data_dict['N']+'_K_'+data_dict['K']
+        if data_dict['mixed'] == 'yes':
+            nome_file_temp = nome_file_temp+'_MIXED.pkl'
+        else:
+            nome_file_temp = nome_file_temp+'.pkl'
+        nome_file_temp = 'datasets/'+nome_file_temp
+        with open(nome_file_temp, 'rb') as file:
+            dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
+        print('dataset', nome_file_temp, 'loaded...\n')
+    except FileNotFoundError:
+        print('file',nome_file_temp,'not found...\n')
         sys.exit()
-    with open(nome_file_temp, 'rb') as file:
-        dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         
 
 if args.new_weights:  

@@ -62,3 +62,19 @@ def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
                 return  0.5*(ampiezza*(1.2+math.cos(2*math.pi*(shift+7/12-t)))/2.2+sign_rumore*rumore(t)+gradino(t))
         return T_new
     
+    if fun_type == "mixed":
+        type_fun = random.randint(0, 11)
+        if type_fun == 0:
+            return generate_temperature("step", t_max, T_max)
+        if type_fun == 1:
+            return generate_temperature("exp", t_max, T_max)
+        if type_fun == 2:
+            return generate_temperature("decr-exp", t_max, T_max)
+        if type_fun == 3:
+            return generate_temperature("sin", t_max, T_max)
+        if type_fun == 4:
+            return generate_temperature("const", t_max, T_max)
+        if type_fun >= 5:
+            return generate_temperature("boy", t_max, T_max)
+        
+    
