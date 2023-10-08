@@ -17,9 +17,9 @@ def T_base(t):
 # PARAMETRI DA SCEGLIERE
 ########################
 N = 220
-K = 120
-K_test = 40
-K_val = 40
+K = 17
+K_test = 12
+K_val = 6
 train_fun_type = 'mixed'
 val_fun_type = 'mixed'
 test_fun_type = 'boy'
@@ -56,6 +56,8 @@ for k in range(K):
 
 dataset = dsg.generate_dataset(temperature, data)   
 
+temperature = []
+
 for k in range(K_val):
     T_new = tg.generate_temperature(val_fun_type)
     T1_plot = np.zeros(N)
@@ -69,7 +71,9 @@ for k in range(K_val):
     del T_new
     
 
-val_set = dsg.generate_dataset(temperature, data)   
+val_set = dsg.generate_dataset(temperature, data) 
+
+temperature = []  
 
 for k in range(K_test):
     T_new = tg.generate_temperature(test_fun_type)
