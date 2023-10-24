@@ -85,8 +85,11 @@ def generate_temp_by_adri(beta_ref):
     mese = random.randint(0, 12)
     ampiezza = random.uniform(0.95, 1.05)
     altezza = random.uniform(-3, 3)
-    Tcos = lambda t: altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12)+0.93)*22 + ampiezza_noise*math.cos(tau_noise*t);
-    T_return = lambda t : beta_ref - Tcos(t*12)/6.0 - 3.0
+    Tamp = 22*ampiezza
+    Tmean = 22*0.93 + altezza
+    Tcos = lambda t: altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t);
+    # T_return = lambda t : beta_ref - Tcos(t*12)/6.0 - 3.0
+    T_return = lambda t : (Tmean-Tcos(t))/(Tamp+ampiezza_noise)*0.3*beta_ref + 0.45*beta_ref
     return T_return
     
         
