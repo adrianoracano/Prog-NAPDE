@@ -18,6 +18,7 @@ import sys
 import pickle
 from matplotlib import pyplot as plt
 from utilities import SirHelperFunctions as shf
+import math
 tf.keras.backend.set_floatx('float64')
 
 ########################
@@ -93,13 +94,8 @@ if len(args.load_weights) > 0:
 N = int(data_dict['N']) # in base a quanto vale N vengono caricate le temperature giuste
 
 if args.load_temp:
+    nome_file_temp = 'datasets/'+data_dict['dataset']
     try:
-        nome_file_temp = 'LOAD_TEMP_N_'+data_dict['N']+'_K_'+data_dict['K']
-        if data_dict['mixed'] == 'yes':
-            nome_file_temp = nome_file_temp+'_MIXED.pkl'
-        else:
-            nome_file_temp = nome_file_temp+'.pkl'
-        nome_file_temp = 'datasets/'+nome_file_temp
         with open(nome_file_temp, 'rb') as file:
             dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         print('dataset', nome_file_temp, 'loaded...\n')
@@ -134,8 +130,18 @@ def multilayer_perceptron(x):
   output = tf.matmul(layer_1, weights['out']) + biases['out']
   return output
 
-    
+###################
+# definizione b_ref
+###################
+alpha = float(data_dict['alpha'])
+S0 = float(data_dict['S0'])
+S_inf = float(data_dict['S_inf'])
+b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
+
 def g(y, v):
+    # prima di dare in input beta, T li normalizzo con b_ref
+    y = (1.0/b_ref)*y
+    v = (1.0/b_ref)*v
     v.shape=(v.shape[0], 1)
     tv = tf.constant(v, dtype = 'float64')
     x = tf.concat([y, tv], 1)
@@ -144,8 +150,8 @@ def g(y, v):
 t_max = float(data_dict['t_max'])
 y0 = float(data_dict['beta0'])
 N = int(data_dict['N'])
-t = np.linspace(0, t_max, N)
-dt = t_max/N
+t = np.linspace(0, 1.0, N)
+dt = 1.0/N
 if not args.load_temp: # se le temperature non sono state caricate, il num di temperature è letto da data.txt
     K=int(data_dict['K']) # numero di temperature
     K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
@@ -154,9 +160,9 @@ temperature_val = []
 
 
 # vengono generate le temperature per il training
-
+tau = 0.2
 def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return 5.0*((1.0-T) - beta)
+    return (1/tau)*((b_ref-T) - beta)*t_max
 
 
 data = {  # questo dict viene usato per generare il dataset
@@ -202,19 +208,21 @@ R0 = float(data_dict['R0'])
 TOT = S0 + I0 + R0 # popolazione totale
 sir_0 = np.array([S0, I0, R0])
 for k in range(K):
-    s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
+    s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, 1.0, a)
     I[k, ] = i.copy()
 if args.validate:
     for k in range(K_val):
-        s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, t_max, a)
+        s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, 1.0, a)
         I_val[k, ] = i.copy()
 
-dt = t_max/N
+dt = 1.0/N
 step_summation = int(data_dict['step_summation'])
 
 ########################
 # definizione della loss
 ########################
+
+delta = 10.0
 
 def custom_loss(K, dataset, I):
     
@@ -223,17 +231,17 @@ def custom_loss(K, dataset, I):
     curr_I_nn = tf.constant( sir_0[1]*np.ones([K, 1], dtype='float64'), dtype='float64')
     curr_S_nn = tf.constant( sir_0[0]*np.ones([K, 1], dtype='float64'), dtype='float64')
     for i in range(N-1):
-        next_beta = curr_beta + dt*g(curr_beta, dataset[0,:,i])
+        next_beta = curr_beta + t_max*dt*g(curr_beta, dataset[0,:,i])
         if solver == 'ea':
-            next_S_nn = curr_S_nn - dt*curr_beta*curr_S_nn*curr_I_nn
-            next_I_nn = curr_I_nn + dt*curr_beta*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
+            next_S_nn = curr_S_nn - t_max*dt*curr_beta*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + t_max*dt*curr_beta*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
                                                         curr_I_nn, curr_beta, next_beta, dt, a)
         if i % step_summation == 0:
             I_exact=I[:,i+1]
             I_exact.shape = (I_exact.shape[0], 1)
-            summation.append( tf.reduce_mean(( ( next_I_nn - I_exact )/TOT )**2 ))    
+            summation.append( tf.reduce_mean( ( tf.abs( next_I_nn - I_exact ) ) ))    
         curr_beta = next_beta
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
@@ -323,7 +331,7 @@ for p in range(n_plots):
             curr_temp = np.array([T(t[i])], dtype='float64')
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
             curr_temp = np.array([test_set[0, p, i]], dtype='float64')
-        next_y = curr_y + dt*g(curr_y, curr_temp)
+        next_y = curr_y + t_max*dt*g(curr_y, curr_temp)
         y_nn[i+1] = next_y.numpy()[0][0]
         y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
         # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
@@ -331,15 +339,15 @@ for p in range(n_plots):
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                         curr_y, next_y, dt, a)
         if solver == 'ea':
-            next_S_nn = curr_S_nn - dt*curr_y*curr_S_nn*curr_I_nn
-            next_I_nn = curr_I_nn + dt*curr_y*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
+            next_S_nn = curr_S_nn - t_max*dt*curr_y*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + t_max*dt*curr_y*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
     if p % 5 == 0:
         # viene calcolata la I_real
-        s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
+        s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, 1.0, a)
         # plot dei beta
         plt.plot(t, y_real)
         plt.plot(t, y_nn)
@@ -372,21 +380,21 @@ if args.plot_train:
         # vengono calcolate le I e i beta
         for i in range(N-1):
             T_curr = np.array([dataset[0, k, i]], dtype='float64')
-            next_y = curr_y + dt*g(curr_y, T_curr)
+            next_y = curr_y + t_max*dt*g(curr_y, T_curr)
             y_nn[i+1] = next_y.numpy()[0][0]
             if solver == 'rk':
                 next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                             curr_y, next_y, dt, a)
             if solver == 'ea':
-                next_S_nn = curr_S_nn - dt*curr_y*curr_S_nn*curr_I_nn
-                next_I_nn = curr_I_nn + dt*curr_y*curr_S_nn*curr_I_nn - dt*a*curr_I_nn
+                next_S_nn = curr_S_nn - t_max*dt*curr_y*curr_S_nn*curr_I_nn
+                next_I_nn = curr_I_nn + t_max*dt*curr_y*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
             I_nn[i+1] = next_I_nn.numpy()[0][0]
         if k % 5 == 0:
             # viene calcolata la I_real
-            s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
+            s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, 1.0, a)
             # plot dei beta
             plt.plot(t, dataset[1, k, :])
             plt.plot(t, y_nn)

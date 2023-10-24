@@ -76,5 +76,18 @@ def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
             return generate_temperature("const", t_max, T_max)
         if type_fun >= 5:
             return generate_temperature("boy", t_max, T_max)
+
+def generate_temp_by_adri(beta_ref):
+    # temperature generate con valori in [temp_min, temp_max]
+    # e con tempo in [0, 1]
+    tau_noise = random.uniform(10, 15)
+    ampiezza_noise = random.uniform(0, 1.5)
+    mese = random.randint(0, 12)
+    ampiezza = random.uniform(0.95, 1.05)
+    altezza = random.uniform(-3, 3)
+    Tcos = lambda t: altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12)+0.93)*22 + ampiezza_noise*math.cos(tau_noise*t);
+    T_return = lambda t : beta_ref - Tcos(t*12)/6.0 - 3.0
+    return T_return
+    
         
     

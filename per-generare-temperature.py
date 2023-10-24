@@ -17,32 +17,38 @@ def T_base(t):
 # PARAMETRI DA SCEGLIERE
 ########################
 N = 220
-K = 17
-K_test = 12
-K_val = 6
-train_fun_type = 'mixed'
-val_fun_type = 'mixed'
-test_fun_type = 'boy'
+K = 40
+K_test = 15
+K_val = 20
+train_fun_type = 'adriano-style'
+val_fun_type = 'adriano-style'
+test_fun_type = 'adriano-style'
+alpha = 2.0
+S0 = 0.99
+S_inf = 0.03
+b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
 
 t = np.linspace(0, 1, N)
-t_max = 1.0
-
-
+t_max = 12.0
+tau = 0.2
 
 def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return 5.0*((1.0-T) - beta)
+    return (1/tau)*((b_ref-T) - beta)*t_max
 
 data = {  # questo dict viene usato per generare il dataset
     'beta0' : np.array([0.05]),
     'f' : f,
-    't_max' : t_max,
+    't_max' : 1.0,
     'N' : N
         }
 
 temperature = []
 
 for k in range(K):
-    T_new = tg.generate_temperature(train_fun_type)
+    if train_fun_type == 'adriano-style':
+        T_new = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(train_fun_type)
     T1_plot = np.zeros(N)
     for i in range(N):
         T1_plot[i] =  T_new(t[i])
@@ -59,7 +65,10 @@ dataset = dsg.generate_dataset(temperature, data)
 temperature = []
 
 for k in range(K_val):
-    T_new = tg.generate_temperature(val_fun_type)
+    if val_fun_type == 'adriano-style':
+        T_new = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(val_fun_type)
     T1_plot = np.zeros(N)
     for i in range(N):
         T1_plot[i] =  T_new(t[i])
@@ -76,7 +85,10 @@ val_set = dsg.generate_dataset(temperature, data)
 temperature = []  
 
 for k in range(K_test):
-    T_new = tg.generate_temperature(test_fun_type)
+    if test_fun_type == 'adriano-style':
+        T_new = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(test_fun_type)
     T1_plot = np.zeros(N)
     for i in range(N):
         T1_plot[i] =  T_new(t[i])
@@ -89,15 +101,17 @@ for k in range(K_test):
     
 
 test_set = dsg.generate_dataset(temperature, data)   
-
-nome_file = 'LOAD_TEMP_N_'+str(N)+'_K_'+str(K)
+if train_fun_type == 'adriano-style':
+    nome_file = 'ADRIANO_STYLE_TEMP_N_'+str(N)+'_K_'+str(K)
+else:
+    nome_file = 'LOAD_TEMP_N_'+str(N)+'_K_'+str(K)
 if train_fun_type == 'mixed':
     nome_file=nome_file+'_MIXED.pkl'
 else:
     nome_file=nome_file+'.pkl'
 
 
-with open(nome_file, 'wb') as file:
+with open('datasets/'+nome_file, 'wb') as file:
     pickle.dump((dataset, K, val_set, K_val, test_set, K_test), file)
     
 
