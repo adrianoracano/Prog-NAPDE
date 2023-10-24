@@ -17,7 +17,7 @@ def T_base(t):
 # PARAMETRI DA SCEGLIERE
 ########################
 N = 220
-K = 40
+K = 20
 K_test = 15
 K_val = 20
 train_fun_type = 'adriano-style'
@@ -36,7 +36,7 @@ def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
     return (1/tau)*((b_ref-T) - beta)*t_max
 
 data = {  # questo dict viene usato per generare il dataset
-    'beta0' : np.array([0.05]),
+    'beta0' : np.array([5.0]),
     'f' : f,
     't_max' : 1.0,
     'N' : N

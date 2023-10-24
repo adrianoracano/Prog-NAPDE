@@ -140,8 +140,8 @@ b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
 
 def g(y, v):
     # prima di dare in input beta, T li normalizzo con b_ref
-    y = (1.0/b_ref)*y
-    v = (1.0/b_ref)*v
+    # y = (1.0/b_ref)*y
+    # v = (1.0/b_ref)*v
     v.shape=(v.shape[0], 1)
     tv = tf.constant(v, dtype = 'float64')
     x = tf.concat([y, tv], 1)
@@ -205,7 +205,7 @@ a = float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
-TOT = S0 + I0 + R0 # popolazione totale
+TOT = data_dict['TOT'] # popolazione totale
 sir_0 = np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, 1.0, a)
