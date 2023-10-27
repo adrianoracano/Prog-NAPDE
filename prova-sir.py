@@ -9,6 +9,7 @@ Created on Tue May 23 12:45:34 2023
 QUETA E' UNA PROVA PER IMPLEMENARE IL SIR
 """
 import tensorflow as tf
+import os
 import numpy as np
 import MyTemperatureGenerator as tg
 import MyDatasetGenerator as dsg
@@ -40,6 +41,7 @@ parser.add_argument('-pt', '--plot-train', help='plot using the train set', acti
 parser.add_argument('-lt', '--load-temp', help = 'load the temperatures', action = 'store_true')
 parser.add_argument('-d', '--default',  help = 'activate flags: --train, --validate, --load-temp', action = 'store_true')
 parser.add_argument('-o', '--overwrite', help = 'save and load the weights from the specified file', default = '')
+parser.add_argument('-sp', '--save-plots', help = 'save the plots in the specified file after the training', default = '')
 
 args = parser.parse_args()
 
@@ -47,7 +49,7 @@ if args.default:
     args.train = True
     args.validate = True
     args.load_temp = True
-    
+
 if len(args.overwrite)>0:
     args.save_weights = args.overwrite
     args.load_weights = args.overwrite
@@ -61,7 +63,7 @@ if len(args.load_weights)>0 and args.new_weights:
 if args.print_help:
     print('scrivere help per lo script')
     sys.exit()
-    
+
 ###############################
 # i dati vengono presi dal file
 ###############################
@@ -161,8 +163,8 @@ temperature_val = []
 
 # vengono generate le temperature per il training
 tau = 0.2
-def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return (1/tau)*((b_ref-T) - beta)*t_max
+def f(beta, Betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
+    return (1/tau)*(Betaeq - beta)*t_max#betaeq va cambiato con la t_return di mytemperaturegenerator, fatto
 
 
 data = {  # questo dict viene usato per generare il dataset
@@ -174,7 +176,7 @@ data = {  # questo dict viene usato per generare il dataset
 
 
 if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non sono stati caricati, vengono generate nuove temp
-    print("Generating new temperatures for train set...\n")    
+    print("Generating new temperatures for train set...\n")
     for k in range(K):
         if len(args.fun_type) == 0: # override dei tipi di temperature
             T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
@@ -225,13 +227,13 @@ step_summation = int(data_dict['step_summation'])
 delta = 10.0
 
 def custom_loss(K, dataset, I):
-    
+
     summation=[]
     curr_beta = tf.constant( y0*np.ones([K, 1], dtype='float64'), dtype='float64')
     curr_I_nn = tf.constant( sir_0[1]*np.ones([K, 1], dtype='float64'), dtype='float64')
     curr_S_nn = tf.constant( sir_0[0]*np.ones([K, 1], dtype='float64'), dtype='float64')
     for i in range(N-1):
-        next_beta = curr_beta + t_max*dt*g(curr_beta, dataset[0,:,i])
+        next_beta = curr_beta + t_max*dt*g(curr_beta/b_ref, dataset[0,:,i]/b_ref)
         if solver == 'ea':
             next_S_nn = curr_S_nn - t_max*dt*curr_beta*curr_S_nn*curr_I_nn
             next_I_nn = curr_I_nn + t_max*dt*curr_beta*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
@@ -241,7 +243,7 @@ def custom_loss(K, dataset, I):
         if i % step_summation == 0:
             I_exact=I[:,i+1]
             I_exact.shape = (I_exact.shape[0], 1)
-            summation.append( tf.reduce_mean( ( tf.abs( next_I_nn - I_exact ) ) ))    
+            summation.append( tf.reduce_mean( ( tf.abs( next_I_nn - I_exact ) ) ))
         curr_beta = next_beta
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
@@ -331,9 +333,10 @@ for p in range(n_plots):
             curr_temp = np.array([T(t[i])], dtype='float64')
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
             curr_temp = np.array([test_set[0, p, i]], dtype='float64')
-        next_y = curr_y + t_max*dt*g(curr_y, curr_temp)
+            curr_betaeq = np.array([test_set[2, p, i]], dtype='float64')
+        next_y = curr_y + dt*g(curr_y/b_ref, curr_temp/b_ref)
         y_nn[i+1] = next_y.numpy()[0][0]
-        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
+        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_betaeq)
         # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
@@ -353,12 +356,28 @@ for p in range(n_plots):
         plt.plot(t, y_nn)
         plt.legend(["soluzione reale", "soluzione rete"])
         plt.title('beta, con test set {}'.format(p+1))
+        if len(args.save_plots) > 0:
+            print("Saving the plots in " + args.save_plots + "...\n")
+            path = "./" + args.save_plots;
+            if not os.path.exists(path):
+                os.mkdir(path)
+            filepath11 = path + "/betatest" + str(p + 1) + ".png";
+            plt.savefig(fname=filepath11)
+        plt.close()
         plt.show()
         # plot delle I
         plt.plot(t, I_real)
         plt.plot(t, I_nn)
         plt.legend(["soluzione reale", "soluzione rete"])
         plt.title('infetti, con test set {}'.format(p+1))
+        if len(args.save_plots) > 0:
+            print("Saving the plots in " + args.save_plots + "...\n")
+            path = "./" + args.save_plots;
+            if not os.path.exists(path):
+                os.mkdir(path)
+            filepath22 = path + "/infettitest" + str(p + 1) + ".png";
+            plt.savefig(fname=filepath22)
+        plt.close()
         plt.show()
     
     
@@ -380,6 +399,7 @@ if args.plot_train:
         # vengono calcolate le I e i beta
         for i in range(N-1):
             T_curr = np.array([dataset[0, k, i]], dtype='float64')
+            betaeq_curr = np.array([dataset[2, k, i]], dtype='float64')
             next_y = curr_y + t_max*dt*g(curr_y, T_curr)
             y_nn[i+1] = next_y.numpy()[0][0]
             if solver == 'rk':
@@ -400,13 +420,35 @@ if args.plot_train:
             plt.plot(t, y_nn)
             plt.legend(["soluzione reale", "soluzione rete"])
             plt.title('beta, con training set {}'.format(k+1))
-            plt.show()
+            if len(args.save_plots) > 0:
+                print("Saving the plots in " + args.save_plots + "...\n")
+                path = "./" + args.save_plots;
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                filepath1 = path + "/betatrain" + str(k+1) + ".png";
+                plt.savefig(fname=filepath1)
+            plt.close()
+            # if args.save_plots:
+            #     filepath1 = "saved-plots/beta" + str(k) + ".png";
+            #     plt.savefig(fname=filepath1)
+            # plt.show()
             # plot delle I
             plt.plot(t, I_real)
             plt.plot(t, I_nn)
             plt.legend(["soluzione reale", "soluzione rete"])
             plt.title('infetti, con training set {}'.format(k+1))
-            plt.show()
+            if len(args.save_plots) > 0:
+                print("Saving the plots in " + args.save_plots + "...\n")
+                path = "./" + args.save_plots;
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                filepath2 = path + "/infettitrain" + str(k+1) + ".png";
+                plt.savefig(fname=filepath2)
+            plt.close()
+            # if args.save_plots:
+            #     filepath2 = "saved-plots/infetti" + str(k) + ".png";
+            #     plt.savefig(fname=filepath2)
+            # plt.show()
 
 # plot della loss
 
@@ -415,6 +457,14 @@ plt.plot(it, loss_history)
 plt.plot(it, loss_history_val)
 plt.legend(["loss training set", "loss validation set"])
 plt.title('evoluzione della loss')
+if len(args.save_plots) > 0:
+    print("Saving the loss plot in " + args.save_plots + "...\n")
+    path = "./" + args.save_plots;
+    if not os.path.exists(path):
+        os.mkdir(path)
+    filepath3 = path + "/lossevolution" + ".png";
+    plt.savefig(fname=filepath3)
+plt.close()
 plt.show()
 
 

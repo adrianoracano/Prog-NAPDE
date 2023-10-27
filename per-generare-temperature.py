@@ -42,65 +42,71 @@ data = {  # questo dict viene usato per generare il dataset
     'N' : N
         }
 
-temperature = []
+temperatureandbetaeqs = []
 
 for k in range(K):
     if train_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)
+        T_new = tg.generate_temp_by_adri(b_ref)[0]
+        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
     else:
         T_new = tg.generate_temperature(train_fun_type)
-    T1_plot = np.zeros(N)
-    for i in range(N):
-        T1_plot[i] =  T_new(t[i])
-    temperature.append(T_new)
-    T2_plot = np.zeros(N)
-    T = temperature[k]
-    for i in range(N):
-        T2_plot[i] =  T(t[i])
-    del T_new
+        Betaeqnew = []
+    # T1_plot = np.zeros(N)
+    # for i in range(N):
+    #     T1_plot[i] =  T_new(t[i])
+    temperatureandbetaeqs.append(np.concat(T_new,Betaeqnew))
+    # T2_plot = np.zeros(N)
+    #T = temperature[k]
+    # for i in range(N):
+    #     T2_plot[i] =  T(t[i])
+    # del T_new
     
 
-dataset = dsg.generate_dataset(temperature, data)   
+dataset = dsg.generate_dataset(temperatureandbetaeqs, data)
 
-temperature = []
+temperatureandbetaeqs = []
 
 for k in range(K_val):
-    if val_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)
+    if train_fun_type == 'adriano-style':
+        T_new = tg.generate_temp_by_adri(b_ref)[0]
+        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
     else:
         T_new = tg.generate_temperature(val_fun_type)
-    T1_plot = np.zeros(N)
-    for i in range(N):
-        T1_plot[i] =  T_new(t[i])
-    temperature.append(T_new)
-    T2_plot = np.zeros(N)
-    T = temperature[k]
-    for i in range(N):
-        T2_plot[i] =  T(t[i])
-    del T_new
+        Betaeqnew = []
+    # T1_plot = np.zeros(N)
+    # for i in range(N):
+    #     T1_plot[i] =  T_new(t[i])
+    temperatureandbetaeqs.append(np.concat(T_new, Betaeqnew))
+    # T2_plot = np.zeros(N)
+    # T = temperature[k]
+    # for i in range(N):
+    #     T2_plot[i] =  T(t[i])
+    # del T_new
     
 
-val_set = dsg.generate_dataset(temperature, data) 
+val_set = dsg.generate_dataset(temperatureandbetaeqs, data)
 
-temperature = []  
+temperatureandbetaeqs = []
 
 for k in range(K_test):
-    if test_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)
+    if train_fun_type == 'adriano-style':
+        T_new = tg.generate_temp_by_adri(b_ref)[0]
+        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
     else:
         T_new = tg.generate_temperature(test_fun_type)
-    T1_plot = np.zeros(N)
-    for i in range(N):
-        T1_plot[i] =  T_new(t[i])
-    temperature.append(T_new)
-    T2_plot = np.zeros(N)
-    T = temperature[k]
-    for i in range(N):
-        T2_plot[i] =  T(t[i])
-    del T_new
+        Betaeqnew = []
+    # T1_plot = np.zeros(N)
+    # for i in range(N):
+    #     T1_plot[i] =  T_new(t[i])
+    temperatureandbetaeqs.append(np.concat(T_new, Betaeqnew))
+    # T2_plot = np.zeros(N)
+    # T = temperature[k]
+    # for i in range(N):
+    #     T2_plot[i] =  T(t[i])
+    # del T_new
     
 
-test_set = dsg.generate_dataset(temperature, data)   
+test_set = dsg.generate_dataset(temperatureandbetaeqs, data)
 if train_fun_type == 'adriano-style':
     nome_file = 'ADRIANO_STYLE_TEMP_N_'+str(N)+'_K_'+str(K)
 else:

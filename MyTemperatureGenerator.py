@@ -6,7 +6,20 @@ Created on Sun May 21 16:40:50 2023
 """
 import random
 import math
+import argparse
 
+parser=argparse.ArgumentParser()
+args = parser.parse_args()
+
+data_dict = {}
+
+with open(args.file, 'r') as file:
+    for line in file:
+        line = line.strip()  # Remove leading/trailing whitespace
+        if line:
+            field, value = line.split(':')
+            data_dict[field.strip()] = value.strip()
+t_max = data_dict['t_max']
 def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
     if fun_type == "step":
         t1 = random.uniform(0., t_max)
@@ -55,12 +68,12 @@ def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
         if sign_r == -1:
             sign_rumore = -1.0
         if sign_gradino == 0:
-            def T_new(t):
+            def T(t):
                 return  ampiezza*(1.2+math.cos(2*math.pi*(shift+7/12-t)))/2.2+sign_rumore*rumore(t)
         if sign_gradino == 1:
-            def T_new(t):
+            def T(t):
                 return  0.5*(ampiezza*(1.2+math.cos(2*math.pi*(shift+7/12-t)))/2.2+sign_rumore*rumore(t)+gradino(t))
-        return T_new
+        return T
     
     if fun_type == "mixed":
         type_fun = random.randint(0, 11)
@@ -89,8 +102,10 @@ def generate_temp_by_adri(beta_ref):
     Tmean = 22*0.93 + altezza
     Tcos = lambda t: altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t);
     # T_return = lambda t : beta_ref - Tcos(t*12)/6.0 - 3.0
-    T_return = lambda t : (Tmean-Tcos(t))/(Tamp+ampiezza_noise)*0.3*beta_ref + 0.45*beta_ref
-    return T_return
+    Betaeq_return = lambda t : (Tmean-Tcos(t*t_max))/(Tamp+ampiezza_noise)*0.3*beta_ref + 0.45*beta_ref #questo dovrebbe essere betaeq, inoltre bisogna usare Tcos(tmax*t) dato che risolviamo il sir adimensionale rispetto al tempo
+    T_return = lambda t: (Tcos(t*t_max)) / (Tamp + ampiezza_noise) * 0.3 * beta_ref + 0.45 * beta_ref
+    return T_return, Betaeq_return
+
     
         
     
