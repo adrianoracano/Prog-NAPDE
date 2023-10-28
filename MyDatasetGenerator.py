@@ -30,15 +30,15 @@ def print_help():
 def generate_dataset(functions, data):#functions è una matrice con 2*ntemperature, dove sulle righe ci sono temp e betaeq
     import MyCrankNicolsonClass as cnc
     import numpy as np
-    n_functions = functions.shape[1]
-    dataset = np.zeros([2, n_functions, data["N"]])
+    n_functions = len(functions)
+    dataset = np.zeros([3, n_functions, data["N"]])
     k = 0
-    for i in range(n_functions):
+    for k in range(n_functions):
         f = data["f"]
-        T = functions[0][i]
-        betaeq = functions[1][i]
+        T = functions[k][0]
+        betaeq = functions[k][1]
         def dbeta(beta, t):
-            return f(beta, betaeq(t))
+            return f(beta, T(t))
         sys = [dbeta]
         cn_solver = cnc.CrankNicolson(sys , data["beta0"], data["t_max"], data["N"])
         cn_solver.compute_solution()
@@ -47,7 +47,6 @@ def generate_dataset(functions, data):#functions è una matrice con 2*ntemperatu
             dataset[0, k, i] = T( t[i] )
             dataset[1, k, i] = beta[0, i]
             dataset[2, k, i] = betaeq( t[i] )
-        k = k + 1
     return dataset.copy()
 
 #non funziona perchè functions ha anche i betaeq

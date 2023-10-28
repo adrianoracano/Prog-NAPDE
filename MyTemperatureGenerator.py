@@ -8,12 +8,12 @@ import random
 import math
 import argparse
 
-parser=argparse.ArgumentParser()
-args = parser.parse_args()
+#parser=argparse.ArgumentParser()
+#args = parser.parse_args()
 
 data_dict = {}
 
-with open(args.file, 'r') as file:
+with open('data.txt', 'r') as file:
     for line in file:
         line = line.strip()  # Remove leading/trailing whitespace
         if line:
@@ -100,10 +100,12 @@ def generate_temp_by_adri(beta_ref):
     altezza = random.uniform(-3, 3)
     Tamp = 22*ampiezza
     Tmean = 22*0.93 + altezza
-    Tcos = lambda t: altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t);
-    # T_return = lambda t : beta_ref - Tcos(t*12)/6.0 - 3.0
-    Betaeq_return = lambda t : (Tmean-Tcos(t*t_max))/(Tamp+ampiezza_noise)*0.3*beta_ref + 0.45*beta_ref #questo dovrebbe essere betaeq, inoltre bisogna usare Tcos(tmax*t) dato che risolviamo il sir adimensionale rispetto al tempo
-    T_return = lambda t: (Tcos(t*t_max)) / (Tamp + ampiezza_noise) * 0.3 * beta_ref + 0.45 * beta_ref
+    def Tcos(t):
+        return altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t)
+    def T_return(t):
+        return beta_ref - Tcos(t*12)/6.0 - 3.0
+    def Betaeq_return(t):
+        return (Tmean-Tcos(t*12))/(Tamp+ampiezza_noise)*0.3*beta_ref + 0.45*beta_ref
     return T_return, Betaeq_return
 
     

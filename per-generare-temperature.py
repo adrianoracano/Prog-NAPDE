@@ -16,7 +16,7 @@ def T_base(t):
 ########################
 # PARAMETRI DA SCEGLIERE
 ########################
-N = 220
+N = 150
 K = 20
 K_test = 15
 K_val = 20
@@ -46,15 +46,14 @@ temperatureandbetaeqs = []
 
 for k in range(K):
     if train_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)[0]
-        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
     else:
         T_new = tg.generate_temperature(train_fun_type)
         Betaeqnew = []
     # T1_plot = np.zeros(N)
     # for i in range(N):
     #     T1_plot[i] =  T_new(t[i])
-    temperatureandbetaeqs.append(np.concat(T_new,Betaeqnew))
+    temperatureandbetaeqs.append((T_new,Betaeqnew))
     # T2_plot = np.zeros(N)
     #T = temperature[k]
     # for i in range(N):
@@ -68,15 +67,14 @@ temperatureandbetaeqs = []
 
 for k in range(K_val):
     if train_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)[0]
-        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
     else:
         T_new = tg.generate_temperature(val_fun_type)
         Betaeqnew = []
     # T1_plot = np.zeros(N)
     # for i in range(N):
     #     T1_plot[i] =  T_new(t[i])
-    temperatureandbetaeqs.append(np.concat(T_new, Betaeqnew))
+    temperatureandbetaeqs.append((T_new, Betaeqnew))
     # T2_plot = np.zeros(N)
     # T = temperature[k]
     # for i in range(N):
@@ -90,15 +88,14 @@ temperatureandbetaeqs = []
 
 for k in range(K_test):
     if train_fun_type == 'adriano-style':
-        T_new = tg.generate_temp_by_adri(b_ref)[0]
-        Betaeqnew = tg.generate_temp_by_adri(b_ref)[1]
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
     else:
         T_new = tg.generate_temperature(test_fun_type)
         Betaeqnew = []
     # T1_plot = np.zeros(N)
     # for i in range(N):
     #     T1_plot[i] =  T_new(t[i])
-    temperatureandbetaeqs.append(np.concat(T_new, Betaeqnew))
+    temperatureandbetaeqs.append((T_new, Betaeqnew))
     # T2_plot = np.zeros(N)
     # T = temperature[k]
     # for i in range(N):
