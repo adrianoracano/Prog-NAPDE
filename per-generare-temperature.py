@@ -32,8 +32,8 @@ t = np.linspace(0, 1, N)
 t_max = 12.0
 tau = 0.2
 
-def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return (1/tau)*((b_ref-T) - beta)*t_max
+def f(beta, betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
+    return (1/tau)*(betaeq - beta)*t_max
 
 data = {  # questo dict viene usato per generare il dataset
     'beta0' : np.array([5.0]),
@@ -108,6 +108,8 @@ if train_fun_type == 'adriano-style':
     nome_file = 'ADRIANO_STYLE_TEMP_N_'+str(N)+'_K_'+str(K)
 else:
     nome_file = 'LOAD_TEMP_N_'+str(N)+'_K_'+str(K)
+
+nome_file = nome_file + 'mod_'
 if train_fun_type == 'mixed':
     nome_file=nome_file+'_MIXED.pkl'
 else:

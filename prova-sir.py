@@ -207,7 +207,7 @@ a = float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
-TOT = data_dict['TOT'] # popolazione totale
+#TOT = data_dict['TOT'] # popolazione totale
 sir_0 = np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, 1.0, a)
