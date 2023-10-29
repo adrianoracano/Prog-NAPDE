@@ -18,4 +18,4 @@ solver: ea
 display_weights: 100
 mixed: yes
 mixed256: yes
-dataset : ADRIANO_STYLE_TEMP_N_150_K_20mod_.pkl
+dataset : ADRIANO_STYLE_TEMP_N_220_K_80_mod_.pkl

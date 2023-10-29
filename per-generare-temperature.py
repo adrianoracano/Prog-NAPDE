@@ -16,10 +16,19 @@ def T_base(t):
 ########################
 # PARAMETRI DA SCEGLIERE
 ########################
-N = 150
-K = 20
-K_test = 15
-K_val = 20
+data_dict = {}
+
+with open('data.txt', 'r') as file:
+    for line in file:
+        line = line.strip()  # Remove leading/trailing whitespace
+        if line:
+            field, value = line.split(':')
+            data_dict[field.strip()] = value.strip()
+
+N = 220
+K = 80
+K_test = 20
+K_val = 40
 train_fun_type = 'adriano-style'
 val_fun_type = 'adriano-style'
 test_fun_type = 'adriano-style'
@@ -109,7 +118,7 @@ if train_fun_type == 'adriano-style':
 else:
     nome_file = 'LOAD_TEMP_N_'+str(N)+'_K_'+str(K)
 
-nome_file = nome_file + 'mod_'
+nome_file = nome_file + '_mod_'
 if train_fun_type == 'mixed':
     nome_file=nome_file+'_MIXED.pkl'
 else:

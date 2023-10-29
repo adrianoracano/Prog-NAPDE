@@ -334,9 +334,9 @@ for p in range(n_plots):
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
             curr_temp = np.array([test_set[0, p, i]], dtype='float64')
             curr_betaeq = np.array([test_set[2, p, i]], dtype='float64')
-        next_y = curr_y + dt*g(curr_y/b_ref, curr_temp/b_ref)
+        next_y = curr_y + t_max * dt*g(curr_y/b_ref, curr_temp/b_ref)
         y_nn[i+1] = next_y.numpy()[0][0]
-        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_betaeq)
+        y_real[i+1] = y_real[i] + t_max * dt*f(y_real[i], curr_betaeq)
         # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
@@ -400,7 +400,7 @@ if args.plot_train:
         for i in range(N-1):
             T_curr = np.array([dataset[0, k, i]], dtype='float64')
             betaeq_curr = np.array([dataset[2, k, i]], dtype='float64')
-            next_y = curr_y + t_max*dt*g(curr_y, T_curr)
+            next_y = curr_y + t_max*dt*g(curr_y/b_ref, T_curr/b_ref)
             y_nn[i+1] = next_y.numpy()[0][0]
             if solver == 'rk':
                 next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
