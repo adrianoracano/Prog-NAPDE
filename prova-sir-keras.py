@@ -20,7 +20,7 @@ import pickle
 from matplotlib import pyplot as plt
 from utilities import SirHelperFunctions as shf
 import random
-
+import math
 tf.keras.backend.set_floatx('float64')
 
 ########################
@@ -31,12 +31,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--train', help='train the network', action='store_true')
 parser.add_argument('-i', '--iterations', help='override the number of iterations', type=int, default=0)
 parser.add_argument('-ph', '--print-help', action='store_true')
-parser.add_argument('-s', '--save-weights', help='save the weights in the specified file after the training',
-                    default='')
-parser.add_argument('-l', '--load-weights', help='load the weights in the specified file before the training',
-                    default='')
-parser.add_argument('-lm', '--load-model', help='load the model in the specified file before the training',
-                    default='')
+parser.add_argument('-s', '--save-weights', help='save the weights in the specified file after the training',default='')
+parser.add_argument('-l', '--load-weights', help='load the weights in the specified file before the training',default='')
+parser.add_argument('-lm', '--load-model', help='load the model in the specified file before the training',default='')
 parser.add_argument('-f', '--file', help='specify the file name. default: data.txt', default='data.txt')
 parser.add_argument('-p', '--plot', help='number of plots after training', default=0, type=int)
 parser.add_argument('-n', '--new-weights', help='generate new random weights', action='store_true')
@@ -102,20 +99,30 @@ solver = data_dict['solver']  # il tipo di metodo usato per il training: ea oppu
 # vengono generati o caricati i pesi
 ####################################
 K_test = 0  # solo una variabile utile per i plot finali
-if len(args.load_weights) > 0:
-    print("Loading weights from " + args.load_weights + "...\n")
-    with open(args.load_weights, 'rb') as file:
-        weights, biases, dataset = pickle.load(file)
-N = int(data_dict['N'])  # in base a quanto vale N vengono caricate le temperature giuste
+# if len(args.load_weights) > 0:
+#     print("Loading weights from " + args.load_weights + "...\n")
+#     with open(args.load_weights, 'rb') as file:
+#         weights, biases, dataset = pickle.load(file)
+# N = int(data_dict['N'])  # in base a quanto vale N vengono caricate le temperature giuste
+
+# if args.load_temp:
+#     try:
+#         nome_file_temp = 'LOAD_TEMP_N_'+data_dict['N']+'_K_'+data_dict['K']
+#         if data_dict['mixed'] == 'yes':
+#             nome_file_temp = nome_file_temp+'_MIXED.pkl'
+#         else:
+#             nome_file_temp = nome_file_temp+'.pkl'
+#         nome_file_temp = 'datasets/'+nome_file_temp
+#         with open(nome_file_temp, 'rb') as file:
+#             dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
+#         print('dataset', nome_file_temp, 'loaded...\n')
+#     except FileNotFoundError:
+#         print('file',nome_file_temp,'not found...\n')
+#         sys.exit()
 
 if args.load_temp:
+    nome_file_temp = 'datasets/'+data_dict['dataset']
     try:
-        nome_file_temp = 'LOAD_TEMP_N_'+data_dict['N']+'_K_'+data_dict['K']
-        if data_dict['mixed'] == 'yes':
-            nome_file_temp = nome_file_temp+'_MIXED.pkl'
-        else:
-            nome_file_temp = nome_file_temp+'.pkl'
-        nome_file_temp = 'datasets/'+nome_file_temp
         with open(nome_file_temp, 'rb') as file:
             dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
         print('dataset', nome_file_temp, 'loaded...\n')
@@ -123,16 +130,16 @@ if args.load_temp:
         print('file',nome_file_temp,'not found...\n')
         sys.exit()
 
-if args.new_weights:
-    print("Generating new weights...\n")
-    weights = {
-        'h1': tf.Variable(tf.random.normal([n_input, n_hidden], dtype='float64'), dtype='float64'),
-        'out': tf.Variable(tf.random.normal([n_hidden, n_output], dtype='float64'), dtype='float64')
-    }
-    biases = {
-        'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
-        'out': tf.Variable(tf.random.normal([n_output], dtype='float64'), dtype='float64')
-    }
+# if args.new_weights:
+#     print("Generating new weights...\n")
+#     weights = {
+#         'h1': tf.Variable(tf.random.normal([n_input, n_hidden], dtype='float64'), dtype='float64'),
+#         'out': tf.Variable(tf.random.normal([n_hidden, n_output], dtype='float64'), dtype='float64')
+#     }
+#     biases = {
+#         'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+#         'out': tf.Variable(tf.random.normal([n_output], dtype='float64'), dtype='float64')
+#     }
 
 # Stochastic gradient descent optimizer.
 # optimizer = tf.optimizers.SGD(learning_rate)
@@ -163,7 +170,7 @@ if len(args.load_model) > 0 and args.new_model:
 
 if len(args.load_model) > 0:
     print("Loading model from " + args.load_model + "...\n")
-    model = tfkl.models.load_model(args.load_model)
+    model = tfk.models.load_model(args.load_model)
 elif args.new_model:
     model = tfk.Sequential()
     model.add(tfkl.Dense(
@@ -191,12 +198,19 @@ def g(y, v):
     x = tf.concat([y, tv], 1)
     return model(x)
 
+###################
+# definizione b_ref
+###################
+alpha = float(data_dict['alpha'])
+S0 = float(data_dict['S0'])
+S_inf = float(data_dict['S_inf'])
+b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
 
 t_max = float(data_dict['t_max'])
 y0 = float(data_dict['beta0'])
 N = int(data_dict['N'])
-t = np.linspace(0, t_max, N)
-dt = t_max / N
+t = np.linspace(0, 1.0, N)
+dt = 1.0 / N
 if not args.load_temp:  # se le temperature non sono state caricate, il num di temperature è letto da data.txt
     K = int(data_dict['K'])  # numero di temperature
     K_val = int(data_dict['K_val'])  # numero di temperature da usare nel validation set
@@ -205,9 +219,9 @@ temperature_val = []
 
 
 # vengono generate le temperature per il training
-
-def f(beta, T):  # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return 5.0 * ((1.0 - T) - beta)
+tau = 0.2
+def f(beta, Betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
+    return (1/tau)*(Betaeq - beta)*t_max#betaeq va cambiato con la t_return di mytemperaturegenerator, fatto
 
 
 data = {  # questo dict viene usato per generare il dataset
@@ -256,7 +270,7 @@ if args.validate:
         s, i, r = hrk.RungeKutta(sir_0, val_set[1, k,], N, t_max, a)
         I_val[k,] = i.copy()
 
-dt = t_max / N
+dt = 1.0 / N
 step_summation = int(data_dict['step_summation'])
 
 
@@ -271,17 +285,17 @@ def custom_loss(K, dataset, I):
     curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
     curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
     for i in range(N - 1):
-        next_beta = curr_beta + dt * g(curr_beta, dataset[0, :, i])
+        next_beta = curr_beta + dt * t_max * g(curr_beta/b_ref, dataset[0, :, i]/b_ref)
         if solver == 'ea':
-            next_S_nn = curr_S_nn - dt * curr_beta * curr_S_nn * curr_I_nn
-            next_I_nn = curr_I_nn + dt * curr_beta * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
+            next_S_nn = curr_S_nn - t_max * dt * curr_beta * curr_S_nn * curr_I_nn
+            next_I_nn = curr_I_nn + t_max * dt * curr_beta * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, \
                                                         curr_I_nn, curr_beta, next_beta, dt, a)
         if i % step_summation == 0:
             I_exact = I[:, i + 1]
             I_exact.shape = (I_exact.shape[0], 1)
-            summation.append(tf.reduce_mean(((next_I_nn - I_exact) / TOT) ** 2))
+            summation.append(tf.reduce_mean((next_I_nn - I_exact) ** 2))
         curr_beta = next_beta
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
@@ -308,7 +322,7 @@ display_weights = int(data_dict['display_weights'])
 #####################
 # training della rete
 #####################
-
+n_iter = 0
 if args.train:
     print("Starting the training...\n")
     loss_history = np.zeros(int(training_steps / display_step))
@@ -330,6 +344,7 @@ if args.train:
             if i % display_weights == 0:
                 print("pesi all'iterazione %i:")
                 print(model.trainable_variables)
+            n_iter = i
     except KeyboardInterrupt:
         print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
 
@@ -337,11 +352,11 @@ if args.train:
 # i pesi vengono salvati
 ########################
 
-if len(args.save_weights) > 0:
-    print("Saving the weights in " + args.save_weights + "...\n")
-    model.save(args.save_weights)
-    with open(args.save_weights, 'wb') as file:
-        pickle.dump((weights, biases, dataset), file)
+# if len(args.save_weights) > 0:
+#     print("Saving the weights in " + args.save_weights + "...\n")
+#     model.save(args.save_weights)
+#     with open(args.save_weights, 'wb') as file:
+#         pickle.dump((weights, biases, dataset), file)
 
 ########################
 # il modello viene salvato
@@ -349,7 +364,7 @@ if len(args.save_weights) > 0:
 
 if len(args.save_model) > 0:
     print("Saving the model in " + args.save_model + "...\n")
-    model.save(args.save_model)
+    model.save(args.save_model + "iter" + str(n_iter))
 
 
 ######################
@@ -357,6 +372,7 @@ if len(args.save_model) > 0:
 ######################
 
 # plot del test set
+
 if not args.load_temp:
     n_plots = args.plot
 else:
@@ -387,16 +403,17 @@ for p in range(n_plots):
             curr_temp = np.array([T(t[i])], dtype='float64')
         else:  # se le temperature sono state caricate non viene usata la T generata casualmente
             curr_temp = np.array([test_set[0, p, i]], dtype='float64')
-        next_y = curr_y + dt * g(curr_y, curr_temp)
+            curr_betaeq = np.array([test_set[2, p, i]], dtype='float64')
+        next_y = curr_y + t_max * dt*g(curr_y/b_ref, curr_temp/b_ref)
         y_nn[i + 1] = next_y.numpy()[0][0]
-        y_real[i + 1] = y_real[i] + dt * f(y_real[i], curr_temp)
+        y_real[i + 1] = y_real[i] + t_max * dt * f(y_real[i], curr_betaeq)
         # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                         curr_y, next_y, dt, a)
         if solver == 'ea':
-            next_S_nn = curr_S_nn - dt * curr_y * curr_S_nn * curr_I_nn
-            next_I_nn = curr_I_nn + dt * curr_y * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
+            next_S_nn = curr_S_nn - t_max * dt * curr_y * curr_S_nn * curr_I_nn
+            next_I_nn = curr_I_nn + t_max * dt * curr_y * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
         I_nn[i + 1] = next_I_nn.numpy()[0][0]
         curr_y = next_y
         curr_S_nn = next_S_nn
@@ -411,7 +428,7 @@ for p in range(n_plots):
         plt.title('beta, con test set {}'.format(p + 1))
         if len(args.save_plots) > 0:
             print("Saving the plots in " + args.save_plots + "...\n")
-            path = "./" + args.save_plots;
+            path = "./" + args.save_plots + "iter" + str(n_iter);
             if not os.path.exists(path):
                 os.mkdir(path)
             filepath11 = path + "/betatest" + str(p + 1) + ".png";
@@ -425,7 +442,7 @@ for p in range(n_plots):
         plt.title('infetti, con test set {}'.format(p + 1))
         if len(args.save_plots) > 0:
             print("Saving the plots in " + args.save_plots + "...\n")
-            path = "./" + args.save_plots;
+            path = "./" + args.save_plots + "iter" + str(n_iter);
             if not os.path.exists(path):
                 os.mkdir(path)
             filepath22 = path + "/infettitest" + str(p + 1) + ".png";
@@ -450,14 +467,14 @@ if args.plot_train:
         # vengono calcolate le I e i beta
         for i in range(N - 1):
             T_curr = np.array([dataset[0, k, i]], dtype='float64')
-            next_y = curr_y + dt * g(curr_y, T_curr)
+            next_y = curr_y + t_max * dt * g(curr_y/b_ref, T_curr/b_ref)
             y_nn[i + 1] = next_y.numpy()[0][0]
             if solver == 'rk':
                 next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
                                                             curr_y, next_y, dt, a)
             if solver == 'ea':
-                next_S_nn = curr_S_nn - dt * curr_y * curr_S_nn * curr_I_nn
-                next_I_nn = curr_I_nn + dt * curr_y * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
+                next_S_nn = curr_S_nn - t_max * dt * curr_y * curr_S_nn * curr_I_nn
+                next_I_nn = curr_I_nn + t_max * dt * curr_y * curr_S_nn * curr_I_nn - dt * a * curr_I_nn
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
@@ -472,7 +489,7 @@ if args.plot_train:
             plt.title('beta, con training set {}'.format(k + 1))
             if len(args.save_plots) > 0:
                 print("Saving the plots in " + args.save_plots + "...\n")
-                path = "./" + args.save_plots;
+                path = "./" + args.save_plots + "iter" + str(n_iter);
                 if not os.path.exists(path):
                     os.mkdir(path)
                 filepath1 = path + "/betatrain" + str(k + 1) + ".png";
@@ -489,7 +506,7 @@ if args.plot_train:
             plt.title('infetti, con training set {}'.format(k + 1))
             if len(args.save_plots) > 0:
                 print("Saving the plots in " + args.save_plots + "...\n")
-                path = "./" + args.save_plots;
+                path = "./" + args.save_plots + "iter" + str(n_iter);
                 if not os.path.exists(path):
                     os.mkdir(path)
                 filepath2 = path + "/infettitrain" + str(k + 1) + ".png";
@@ -509,7 +526,7 @@ plt.legend(["loss training set", "loss validation set"])
 plt.title('evoluzione della loss')
 if len(args.save_plots) > 0:
     print("Saving the loss plot in " + args.save_plots + "...\n")
-    path = "./" + args.save_plots;
+    path = "./" + args.save_plots + "iter" + str(n_iter);
     if not os.path.exists(path):
         os.mkdir(path)
     filepath3 = path + "/lossevolution" + ".png";

@@ -16,10 +16,19 @@ def T_base(t):
 ########################
 # PARAMETRI DA SCEGLIERE
 ########################
-N = 150
-K = 20
-K_test = 15
-K_val = 20
+data_dict = {}
+
+with open('data.txt', 'r') as file:
+    for line in file:
+        line = line.strip()  # Remove leading/trailing whitespace
+        if line:
+            field, value = line.split(':')
+            data_dict[field.strip()] = value.strip()
+
+N = 220
+K = 80
+K_test = 20
+K_val = 40
 train_fun_type = 'adriano-style'
 val_fun_type = 'adriano-style'
 test_fun_type = 'adriano-style'
@@ -32,8 +41,8 @@ t = np.linspace(0, 1, N)
 t_max = 12.0
 tau = 0.2
 
-def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return (1/tau)*((b_ref-T) - beta)*t_max
+def f(beta, betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
+    return (1/tau)*(betaeq - beta)*t_max
 
 data = {  # questo dict viene usato per generare il dataset
     'beta0' : np.array([5.0]),
@@ -108,6 +117,8 @@ if train_fun_type == 'adriano-style':
     nome_file = 'ADRIANO_STYLE_TEMP_N_'+str(N)+'_K_'+str(K)
 else:
     nome_file = 'LOAD_TEMP_N_'+str(N)+'_K_'+str(K)
+
+nome_file = nome_file + '_mod_'
 if train_fun_type == 'mixed':
     nome_file=nome_file+'_MIXED.pkl'
 else:

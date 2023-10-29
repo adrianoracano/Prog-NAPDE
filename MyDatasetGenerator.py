@@ -27,7 +27,7 @@ def print_help():
     print("La funzione example() esegue un esempio, la funzione print_example() mostra il codice dell'esempio")
     
     
-def generate_dataset(functions, data):#functions è una matrice con 2*ntemperature, dove sulle righe ci sono temp e betaeq
+def generate_dataset(functions, data):#functions è una matrice di dimensione 2*ntemperature, dove sulle righe ci sono temp e betaeq, sulle colonne le varie temperature
     import MyCrankNicolsonClass as cnc
     import numpy as np
     n_functions = len(functions)
@@ -38,7 +38,7 @@ def generate_dataset(functions, data):#functions è una matrice con 2*ntemperatu
         T = functions[k][0]
         betaeq = functions[k][1]
         def dbeta(beta, t):
-            return f(beta, T(t))
+            return f(beta, betaeq(t))
         sys = [dbeta]
         cn_solver = cnc.CrankNicolson(sys , data["beta0"], data["t_max"], data["N"])
         cn_solver.compute_solution()
