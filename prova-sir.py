@@ -210,11 +210,11 @@ R0 = float(data_dict['R0'])
 #TOT = data_dict['TOT'] # popolazione totale
 sir_0 = np.array([S0, I0, R0])
 for k in range(K):
-    s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, 1.0, a)
+    s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
     I[k, ] = i.copy()
 if args.validate:
     for k in range(K_val):
-        s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, 1.0, a)
+        s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, t_max, a)
         I_val[k, ] = i.copy()
 
 dt = 1.0/N
@@ -243,7 +243,7 @@ def custom_loss(K, dataset, I):
         if i % step_summation == 0:
             I_exact=I[:,i+1]
             I_exact.shape = (I_exact.shape[0], 1)
-            summation.append( tf.reduce_mean( ( tf.abs( next_I_nn - I_exact ) ) ))
+            summation.append( tf.reduce_sum( ( tf.abs( next_I_nn - I_exact ) ) ))
         curr_beta = next_beta
         curr_S_nn = next_S_nn
         curr_I_nn = next_I_nn
@@ -336,7 +336,7 @@ for p in range(n_plots):
             curr_betaeq = np.array([test_set[2, p, i]], dtype='float64')
         next_y = curr_y + t_max * dt*g(curr_y/b_ref, curr_temp/b_ref)
         y_nn[i+1] = next_y.numpy()[0][0]
-        y_real[i+1] = y_real[i] + t_max * dt*f(y_real[i], curr_betaeq)
+        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_betaeq)
         # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
         if solver == 'rk':
             next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
@@ -350,7 +350,7 @@ for p in range(n_plots):
         curr_I_nn = next_I_nn
     if p % 5 == 0:
         # viene calcolata la I_real
-        s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, 1.0, a)
+        s, I_real, r = hrk.RungeKutta(sir_0, y_real, N, t_max, a)
         # plot dei beta
         plt.plot(t, y_real)
         plt.plot(t, y_nn)
@@ -363,7 +363,7 @@ for p in range(n_plots):
                 os.mkdir(path)
             filepath11 = path + "/betatest" + str(p + 1) + ".png";
             plt.savefig(fname=filepath11)
-        plt.close()
+        # plt.close()
         plt.show()
         # plot delle I
         plt.plot(t, I_real)
@@ -377,7 +377,7 @@ for p in range(n_plots):
                 os.mkdir(path)
             filepath22 = path + "/infettitest" + str(p + 1) + ".png";
             plt.savefig(fname=filepath22)
-        plt.close()
+        # plt.close()
         plt.show()
     
     
@@ -414,7 +414,7 @@ if args.plot_train:
             I_nn[i+1] = next_I_nn.numpy()[0][0]
         if k % 5 == 0:
             # viene calcolata la I_real
-            s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, 1.0, a)
+            s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
             # plot dei beta
             plt.plot(t, dataset[1, k, :])
             plt.plot(t, y_nn)
@@ -427,11 +427,11 @@ if args.plot_train:
                     os.mkdir(path)
                 filepath1 = path + "/betatrain" + str(k+1) + ".png";
                 plt.savefig(fname=filepath1)
-            plt.close()
+            # plt.close()
             # if args.save_plots:
             #     filepath1 = "saved-plots/beta" + str(k) + ".png";
             #     plt.savefig(fname=filepath1)
-            # plt.show()
+            plt.show()
             # plot delle I
             plt.plot(t, I_real)
             plt.plot(t, I_nn)
@@ -444,11 +444,11 @@ if args.plot_train:
                     os.mkdir(path)
                 filepath2 = path + "/infettitrain" + str(k+1) + ".png";
                 plt.savefig(fname=filepath2)
-            plt.close()
+            # plt.close()
             # if args.save_plots:
             #     filepath2 = "saved-plots/infetti" + str(k) + ".png";
             #     plt.savefig(fname=filepath2)
-            # plt.show()
+            plt.show()
 
 # plot della loss
 
@@ -464,7 +464,7 @@ if len(args.save_plots) > 0:
         os.mkdir(path)
     filepath3 = path + "/lossevolution" + ".png";
     plt.savefig(fname=filepath3)
-plt.close()
+# plt.close()
 plt.show()
 
 
