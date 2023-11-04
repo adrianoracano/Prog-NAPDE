@@ -26,7 +26,7 @@ with open('data.txt', 'r') as file:
             data_dict[field.strip()] = value.strip()
 
 N = 220
-K = 80
+K = 40
 K_test = 20
 K_val = 40
 train_fun_type = 'adriano-style'
@@ -36,16 +36,17 @@ alpha = 2.0
 S0 = 0.99
 S_inf = 0.03
 b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
+nome_file = "da_scegliere.pkl"
 
 t = np.linspace(0, 1, N)
 t_max = 12.0
-tau = 0.2
 
+"""
 def f(beta, betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
     return (1/tau)*(betaeq - beta)*t_max
 
 data = {  # questo dict viene usato per generare il dataset
-    'beta0' : np.array([5.0]),
+    'beta0' : np.array([0.5]),
     'f' : f,
     't_max' : 1.0,
     'N' : N
@@ -124,9 +125,39 @@ if train_fun_type == 'mixed':
 else:
     nome_file=nome_file+'.pkl'
 
+"""
+dataset = np.zeros([K, N])
+for k in range(K):
+    if train_fun_type == 'adriano-style':
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(val_fun_type)
+    for i in range(N):
+        dataset[k, i] = T_new(t[i])
+    del T_new
+
+val_set = np.zeros([K, N])
+for k in range(K):
+    if train_fun_type == 'adriano-style':
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(val_fun_type)
+    for i in range(N):
+        val_set[k, i] = T_new(t[i])
+    del T_new
+    
+test_set = np.zeros([K, N])
+for k in range(K):
+    if train_fun_type == 'adriano-style':
+        T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
+    else:
+        T_new = tg.generate_temperature(val_fun_type)
+    for i in range(N):
+        test_set[k, i] = T_new(t[i])
+    del T_new
 
 with open('datasets/'+nome_file, 'wb') as file:
-    pickle.dump((dataset, K, val_set, K_val, test_set, K_test), file)
+    pickle.dump((dataset, val_set, test_set), file)
     
 
  

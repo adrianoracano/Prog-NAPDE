@@ -1,23 +1,7 @@
-import tensorflow as tf
-import os
-import numpy as np
-import MyTemperatureGenerator as tg
-import MyDatasetGenerator as dsg
-from utilities import HerRungeKutta as hrk
-import argparse
-import sys
-import pickle
 from matplotlib import pyplot as plt
-from utilities import SirHelperFunctions as shf
-import random
-import math
-tf.keras.backend.set_floatx('float64')
+import numpy as np
 
-from Data import *
-from arguments import*
-from utilities import MyRK4
-import InfectsGenerator as ig
-
+"""
 def test_plot(beta0, g, f, save_plot = True, save_path = ''):
     # inizializza i beta
     t = np.linspace(0,1,N)
@@ -122,3 +106,26 @@ def Dataset_plot(dataset, beta0, g, f, train_or_test, save_plot = True, save_pat
                     string = "/training_plot"
                 filepath = save_path + string + str(p + 1) + ".png";
                 plt.savefig(fname=filepath)
+
+"""
+
+def plot_beta_I(beta, I, beta_nn, I_nn, set_type = '', plot_display = 1):
+    K = beta.shape[0]
+    N = beta.shape[1]
+    t = np.linspace(0., 1., N)
+    for k in range(K):
+        if k % plot_display == 0:
+            fig, (ax1, ax2) = plt.subplots(2)
+            ax1.plot(t, beta_nn[k, :])
+            ax1.plot(t, beta[k, :])
+            ax2.legend(["beta rete", "beta reali"])
+            ax2.plot(t, I_nn[k, :])
+            ax2.plot(t, I[k, :])
+            ax2.legend(["infetti rete", "infetti reali"])
+            plt.suptitle(set_type+" n° "+str(k), y=1.02)  # Il parametro "y" regola l'altezza del titolo
+
+            plt.tight_layout()  # Per evitare sovrapposizioni
+            plt.show()
+        
+    
+    

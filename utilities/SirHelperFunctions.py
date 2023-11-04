@@ -5,6 +5,7 @@ Created on Tue Jul  4 11:30:45 2023
 @author: alean
 """
 import tensorflow as tf
+import numpy as np
 
 def forward_euler_step(curr_S_nn, curr_I_nn, curr_beta, dt, a):
     next_S_nn = curr_S_nn - dt*tf.matmul(curr_beta, tf.matmul(curr_S_nn, curr_I_nn))
@@ -50,3 +51,41 @@ def runge_kutta_step(curr_s, curr_i, curr_beta, next_beta, dt, a):
     next_s = s + (dt/6.)*(m1 + 2.*m2 +2.*m3 + m4)
     next_i = i + (dt/6.)*(k1 + 2.*k2 +2.*k3 + k4)
     return next_s, next_i
+
+def compute_I(betas, t_max, alpha, sir_0):
+    Is = []
+    S0, I0, R0 = sir_0
+    for beta_vec in betas:
+        N = beta_vec.shape[1]
+        K = beta_vec.shape[0]
+        I = np.zeros([K, N])
+        I[:, 0] = I0
+        S_old = np.zeros(K) 
+        S_new = np.zeros(K)
+        S_old[:] = S0
+        dt = 1.0/N
+        for i in range(N-1):
+            S_new = S_old - t_max * dt * beta_vec[:, i] * S_old * I[:, i]
+            I[:, i+1] = I[:, i] + t_max*dt*( beta_vec[:, i]*S_old*I[:, i] - alpha*I[:, i] )
+            S_old = S_new
+        Is.append(I.copy())
+    return Is
+    
+def compute_beta(datasets, beta0, t_max, tau, b_ref):
+    def f(b, T):
+        return (1.0/tau)*(b_ref - T - b)
+    real_beta = []
+    for temps in datasets:
+        N = temps.shape[1]
+        K = temps.shape[0]
+        beta = np.zeros([K, N])
+        dt = 1.0/N
+        beta[:, 0] = beta0
+        for i in range(N-1):
+            beta[:, i+1] = beta[:, i] + dt*t_max*f(beta[:, i], temps[:, i])
+        real_beta.append(beta.copy())
+    return real_beta
+    
+    
+    
+    
