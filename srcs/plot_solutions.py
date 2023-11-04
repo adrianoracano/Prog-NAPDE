@@ -118,7 +118,7 @@ def plot_beta_I(beta, I, beta_nn, I_nn, set_type = '', plot_display = 1):
             fig, (ax1, ax2) = plt.subplots(2)
             ax1.plot(t, beta_nn[k, :])
             ax1.plot(t, beta[k, :])
-            ax2.legend(["beta rete", "beta reali"])
+            ax1.legend(["beta rete", "beta reali"])
             ax2.plot(t, I_nn[k, :])
             ax2.plot(t, I[k, :])
             ax2.legend(["infetti rete", "infetti reali"])

@@ -7,7 +7,7 @@ Created on Fri Jun 30 10:30:05 2023
 import math
 import random
 import MyTemperatureGenerator as tg
-import MyDatasetGenerator as dsg
+# import MyDatasetGenerator as dsg
 import numpy as np
 import pickle
 def T_base(t):
@@ -25,7 +25,7 @@ with open('data.txt', 'r') as file:
             field, value = line.split(':')
             data_dict[field.strip()] = value.strip()
 
-N = 220
+N = 150
 K = 40
 K_test = 20
 K_val = 40
@@ -36,7 +36,7 @@ alpha = 2.0
 S0 = 0.99
 S_inf = 0.03
 b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
-nome_file = "da_scegliere.pkl"
+nome_file = "prova.pkl"
 
 t = np.linspace(0, 1, N)
 t_max = 12.0
@@ -136,7 +136,7 @@ for k in range(K):
         dataset[k, i] = T_new(t[i])
     del T_new
 
-val_set = np.zeros([K, N])
+val_set = np.zeros([K_val, N])
 for k in range(K):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
@@ -146,7 +146,7 @@ for k in range(K):
         val_set[k, i] = T_new(t[i])
     del T_new
     
-test_set = np.zeros([K, N])
+test_set = np.zeros([K_test, N])
 for k in range(K):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)

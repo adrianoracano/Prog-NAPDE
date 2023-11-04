@@ -21,7 +21,7 @@ tfkl = tf.keras.layers
 tfkl.Normalization(dtype='float64')
 
 tf.keras.backend.set_floatx('float64')
-seed = 10
+seed = 25
 random.seed(seed)
 os.environ['PYTHONHASHSEED'] = str(seed)
 np.random.seed(seed)

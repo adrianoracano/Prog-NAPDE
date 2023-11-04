@@ -2,8 +2,7 @@ import tensorflow as tf
 from tensorflow import keras as tfk
 from keras import layers as tfkl
 import numpy as np
-import sys
-from utilities import SirHelperFunctions as shf
+
 
 tf.keras.backend.set_floatx('float64')
 
@@ -13,11 +12,21 @@ class Model:
         self.n_input = 2
         self.n_hidden = n_hidden
         self.b_ref = b_ref
+        self.n_output = 1
         if(len(load_path)>0):
             print("Loading model from " + load_path + "...\n")
             self.load_model(load_path)
         else:
+            self.weights = {
+            'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+            'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
+            }
+            self.biases = {
+            'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+            'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
+            }
             print("Generating new model with standard parameters ...\n")
+            """
             model = tfk.Sequential()
             model.add(tfkl.Dense(
                 units=n_hidden,
@@ -40,16 +49,22 @@ class Model:
             if (addBNorm):
                 model.add(tfkl.BatchNormalization())
             self.model = model
+            """
+            
         self.optimizer = tf.optimizers.Adam(learning_rate)
         self.n_iter = 0
-
+    def multilayer_perceptron(self, x):
+        layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
+        layer_1 = tf.nn.sigmoid(layer_1)
+        output = tf.matmul(layer_1, self.weights['out']) + self.biases['out']
+        return output
     def g(self, y, v):
         y = (1.0/self.b_ref)*y
         v = (1.0/self.b_ref)*v
         v.shape = (v.shape[0], 1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
-        return self.model(x)
+        return self.multilayer_perceptron(x)
     def custom_loss(self, dataset, I, sir_0, t_max, alpha, beta0):
         summation = []
         K = I.shape[0]
@@ -61,7 +76,7 @@ class Model:
         curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
         dt = 1.0/N
         for i in range(N - 1):
-            next_beta = curr_beta + dt * self.g(curr_beta, dataset[:, i])
+            next_beta = curr_beta + t_max *dt * self.g(curr_beta, dataset[:, i])
             # step di eulero in avanti
             next_S_nn = curr_S_nn - t_max * dt * curr_beta * curr_S_nn * curr_I_nn
             next_I_nn = curr_I_nn + t_max * dt * ( curr_beta * curr_S_nn * curr_I_nn -  alpha * curr_I_nn )
@@ -76,7 +91,8 @@ class Model:
     def train_step(self, dataset, I, sir_0, t_max, alpha, beta0):
         with tf.GradientTape() as tape:
             loss = self.custom_loss(dataset, I, sir_0, t_max, alpha, beta0)
-        trainable_variables = self.model.trainable_variables
+        # trainable_variables = self.model.trainable_variables
+        trainable_variables = list(self.weights.values())+list(self.biases.values())
         gradients = tape.gradient(loss, trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, trainable_variables))
         self.n_iter = self.n_iter + 1
@@ -88,46 +104,7 @@ class Model:
     def save_model(self, save_path):
         print("Saving the model in " + save_path + "...\n")
         self.model.save(save_path + "iter" + str(self.n_iter))
-"""
-    def train(self, dataset, I, val_set, I_val, max_iter):
-        print("Starting the training...\n")
-        loss_history = np.zeros(int(max_iter / display_step))
-        i_history = 0
-        #if args.validate:
-        loss_history_val = np.zeros(int(training_steps / display_step))
-        try:
-            for i in range(max_iter):
-                self.train_step(K, dataset, I)
-                if i % display_step == 0:
-                    print("iterazione %i:" % i)
-                    loss_history[i_history] = self.custom_loss(K, dataset, I)
-                    print("loss on training set: %f " % loss_history[i_history])
-                    if args.validate:
-                        loss_history_val[i_history] = self.custom_loss(K_val, val_set, I_val)
-                        print("loss on validation set: %f" % loss_history_val[i_history])
-                    i_history = i_history + 1
-                if i % display_weights == 0:
-                    print("pesi all'iterazione %i:")
-                    print(self.model.trainable_variables)
-                self.n_iter = i
-        except KeyboardInterrupt:
-            print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
-"""
-    # if len(args.load_model) > 0 and args.new_model:
-    #     print("Cannot generate new model and loading an existing one. Aborting..\n")
-    #     sys.exit()
-    # if (args.new_model):
-    #     model = get_model()
-    # elif(args.load_model):
-    #     print("Loading model from " + args.load_model + "...\n")
-    #     model = tfk.models.load_model(args.load_model)
-    # def g(y, v):
-    #     # y = (1.0/b_ref)*y
-    #     # v = (1.0/b_ref)*v
-    #     v.shape = (v.shape[0], 1)
-    #     tv = tf.constant(v, dtype='float64')
-    #     x = tf.concat([y, tv], 1)
-    #     return model(x)
+
     
 
 class NetworkForSIR:
@@ -137,6 +114,7 @@ class NetworkForSIR:
         self.t_max = t_max
         self.alpha = alpha
     def train(self, dataset, I, val_set, I_val, sir_0, beta0, max_iter, display_weights, validate = True):
+        print('modificato')
         display_step = self.display_step
         print("Starting the training...\n")
         loss_history = np.zeros(int(max_iter / display_step))
@@ -180,7 +158,7 @@ class NetworkForSIR:
         beta_return[:, 0]=beta0
         I_return[:, 0] = sir_0[1]
         for i in range(N-1):
-            next_beta = curr_beta + dt * self.model.g(curr_beta, dataset[:, i])
+            next_beta = curr_beta + self.t_max * dt * self.model.g(curr_beta, dataset[:, i])
             beta_return[:, i+1] = next_beta.numpy()[:, 0].copy()
             # step di eulero in avanti
             next_S_nn = curr_S_nn - self.t_max * dt * curr_beta * curr_S_nn * curr_I_nn
