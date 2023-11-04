@@ -6,10 +6,7 @@ Created on Sun May 21 16:40:50 2023
 """
 import random
 import math
-import argparse
 
-#parser=argparse.ArgumentParser()
-#args = parser.parse_args()
 
 data_dict = {}
 
@@ -94,7 +91,7 @@ def generate_temp_by_adri(beta_ref):
     # temperature generate con valori in [temp_min, temp_max]
     # e con tempo in [0, 1]
     tau_noise = random.uniform(10, 15)
-    ampiezza_noise = random.uniform(0, 1.5)
+    ampiezza_noise = 0.7 +1/2*random.uniform(0, 1.5)
     mese = random.randint(0, 12)
     ampiezza = random.uniform(0.95, 1.05)
     altezza = random.uniform(-3, 3)
@@ -103,9 +100,10 @@ def generate_temp_by_adri(beta_ref):
     def Tcos(t):
         return altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t)
     def T_return(t):
-        return beta_ref - Tcos(t*12)/6.0 - 3.0
+        #return beta_ref - Tcos(t*12)/6.0 - 3.0
+        return (Tcos(t*12) - Tmean)/(Tamp + 0.7)*0.3*beta_ref + 0.45*beta_ref
     def Betaeq_return(t):
-        return (Tmean-Tcos(t*12))/(Tamp)*0.3*beta_ref + 0.45*beta_ref
+        return (Tmean - Tcos(t*12))/(Tamp + 0.7)*0.3*beta_ref + 0.45*beta_ref
     return T_return, Betaeq_return
 
     

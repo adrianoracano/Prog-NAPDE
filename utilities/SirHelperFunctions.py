@@ -73,7 +73,7 @@ def compute_I(betas, t_max, alpha, sir_0):
     
 def compute_beta(datasets, beta0, t_max, tau, b_ref):
     def f(b, T):
-        return (1.0/tau)*(b_ref - T - b)
+        return (1.0/tau)*(0.9*b_ref - T - b)
     real_beta = []
     for temps in datasets:
         N = temps.shape[1]

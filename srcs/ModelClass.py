@@ -79,6 +79,7 @@ class Model:
         trainable_variables = self.model.trainable_variables
         gradients = tape.gradient(loss, trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, trainable_variables))
+        self.n_iter = self.n_iter + 1
 
     def load_model(self, load_path):
         print("Loading model from " + load_path + "...\n")
@@ -86,7 +87,7 @@ class Model:
 
     def save_model(self, save_path):
         print("Saving the model in " + save_path + "...\n")
-        self.model(save_path + "iter" + str(self.n_iter))
+        self.model.save(save_path + "iter" + str(self.n_iter))
 """
     def train(self, dataset, I, val_set, I_val, max_iter):
         print("Starting the training...\n")
