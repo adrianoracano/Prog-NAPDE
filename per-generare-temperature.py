@@ -36,7 +36,11 @@ alpha = 2.0
 S0 = 0.99
 S_inf = 0.03
 b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
-nome_file = "prova.pkl"
+nome_file = "prova_con_beta0.pkl"
+beta0_inf = 0.5
+beta0_sup = 5.0
+
+
 
 t = np.linspace(0, 1, N)
 t_max = 12.0
@@ -127,6 +131,7 @@ else:
 
 """
 dataset = np.zeros([K, N])
+beta0_train = np.random.uniform(beta0_inf, beta0_sup, (K))
 for k in range(K):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
@@ -136,8 +141,9 @@ for k in range(K):
         dataset[k, i] = T_new(t[i])
     del T_new
 
+beta0_val = np.random.uniform(beta0_inf, beta0_sup, (K_val))
 val_set = np.zeros([K_val, N])
-for k in range(K):
+for k in range(K_val):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
     else:
@@ -145,9 +151,10 @@ for k in range(K):
     for i in range(N):
         val_set[k, i] = T_new(t[i])
     del T_new
-    
+
+beta0_test = np.random.uniform(beta0_inf, beta0_sup, (K_test))
 test_set = np.zeros([K_test, N])
-for k in range(K):
+for k in range(K_test):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
     else:
@@ -157,7 +164,7 @@ for k in range(K):
     del T_new
 
 with open('datasets/'+nome_file, 'wb') as file:
-    pickle.dump((dataset, val_set, test_set), file)
+    pickle.dump((dataset, val_set, test_set, beta0_train, beta0_val, beta0_test), file)
     
 
  

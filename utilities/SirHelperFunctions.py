@@ -71,11 +71,15 @@ def compute_I(betas, t_max, alpha, sir_0):
         Is.append(I.copy())
     return Is
     
-def compute_beta(datasets, beta0, t_max, tau, b_ref):
+def compute_beta(datasets, beta0s, t_max, tau, b_ref):
     def f(b, T):
         return (1.0/tau)*(0.9*b_ref - T - b)
     real_beta = []
-    for temps in datasets:
+    J = len(datasets)
+    for j in range(J):
+        temps = datasets[j]
+        beta0 = beta0s[j]
+        beta0.shape = (beta0.shape[0])
         N = temps.shape[1]
         K = temps.shape[0]
         beta = np.zeros([K, N])

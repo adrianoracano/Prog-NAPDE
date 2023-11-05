@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras as tfk
 from keras import layers as tfkl
 import numpy as np
-
+import pickle
 
 tf.keras.backend.set_floatx('float64')
 
@@ -70,7 +70,7 @@ class Model:
         K = I.shape[0]
         N = I.shape[1]
         b = np.zeros([K, 1], dtype = 'float64')
-        b[:] = beta0 # potrebbe dare problemi?
+        b[:, 0] = beta0 # potrebbe dare problemi?
         curr_beta = tf.constant(b, dtype='float64')
         curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
         curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
@@ -99,11 +99,14 @@ class Model:
 
     def load_model(self, load_path):
         print("Loading model from " + load_path + "...\n")
-        self.model = tfk.models.load_model(load_path)
-
+        # self.model = tfk.models.load_model(load_path)
+        with open(load_path, 'rb') as file:
+            self.weights, self.biases = pickle.load(file)
     def save_model(self, save_path):
         print("Saving the model in " + save_path + "...\n")
-        self.model.save(save_path + "iter" + str(self.n_iter))
+        # self.model.save(save_path + "iter" + str(self.n_iter))
+        with open(save_path, 'wb') as file:
+            pickle.dump((self.weights, self.biases), file)
 
     
 
@@ -148,7 +151,7 @@ class NetworkForSIR:
         N = dataset.shape[1]
         K = dataset.shape[0]
         b = np.zeros([K, 1], dtype = 'float64')
-        b[:] = beta0 # potrebbe dare problemi?
+        b[:, 0] = beta0 # potrebbe dare problemi?
         curr_beta = tf.constant(b, dtype='float64')
         curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
         curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
