@@ -15,6 +15,7 @@ import pickle
 from utilities import SirHelperFunctions as shf
 import random
 import math
+from matplotlib import pyplot as plt
 from srcs import plot_solutions
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -119,8 +120,9 @@ network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
 
 if args.train:
-    network.train(dataset, I_train, val_set, I_val, [S0, I0, R0], beta0_train, beta0_val, \
-                  training_steps, display_weights, validate = True)
+    loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, [S0, I0, R0], \
+                                             beta0_train, beta0_val, \
+                                             training_steps, display_weights, validate = True)
 
 b_train_nn, I_train_nn = network.compute_beta_I(dataset, [S0, I0, R0], beta0_train)
 b_val_nn, I_val_nn = network.compute_beta_I(val_set, [S0, I0, R0], beta0_val)
@@ -135,5 +137,11 @@ if args.plot_test:
 
 if len(args.save_model)>0:
     model.save_model(args.save_model)
+if args.train:
+    plt.plot(np.arange(0, it), loss_train[0:it])
+    plt.plot(np.arange(0, it), loss_val[0:it])
+    plt.legend(["loss train", "loss val"])
+    plt.title("loss evolution")
+    plt.show()
 
 

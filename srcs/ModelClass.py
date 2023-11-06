@@ -145,7 +145,7 @@ class NetworkForSIR:
                 """
         except KeyboardInterrupt:
             print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
-        return loss_history, loss_history_val
+        return loss_history, loss_history_val, i_history
     # volendo si possono aggiungere qui metodi per fare plot e cose simili  
     def compute_beta_I(self, dataset, sir_0, beta0):
         N = dataset.shape[1]
