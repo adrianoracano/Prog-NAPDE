@@ -119,7 +119,7 @@ network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
 
 if args.train:
-    network.train(dataset, I_train, val_set, I_val, [S0, I0, R0], beta0_train, \
+    network.train(dataset, I_train, val_set, I_val, [S0, I0, R0], beta0_train, beta0_val, \
                   training_steps, display_weights, validate = True)
 
 b_train_nn, I_train_nn = network.compute_beta_I(dataset, [S0, I0, R0], beta0_train)
