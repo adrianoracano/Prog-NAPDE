@@ -116,7 +116,7 @@ class NetworkForSIR:
         self.display_step = display_step
         self.t_max = t_max
         self.alpha = alpha
-    def train(self, dataset, I, val_set, I_val, sir_0, beta0, max_iter, display_weights, validate = True):
+    def train(self, dataset, I, val_set, I_val, sir_0, beta0_train, beta0_val, max_iter, display_weights, validate = True):
         print('modificato')
         display_step = self.display_step
         print("Starting the training...\n")
@@ -126,15 +126,15 @@ class NetworkForSIR:
         loss_history_val = np.zeros(int(max_iter / display_step))
         try:
             for i in range(max_iter):
-                self.model.train_step(dataset, I, sir_0, self.t_max, self.alpha, beta0)
+                self.model.train_step(dataset, I, sir_0, self.t_max, self.alpha, beta0_train)
                 if i % display_step == 0:
                     print("iterazione %i:" % i)
                     loss_history[i_history] = self.model.custom_loss(dataset, I, \
-                                                                     sir_0, self.t_max, self.alpha, beta0)
+                                                                     sir_0, self.t_max, self.alpha, beta0_train)
                     print("loss on training set: %f " % loss_history[i_history])
                     if validate:
                         loss_history_val[i_history] = self.model.custom_loss(val_set, I_val, \
-                                                                         sir_0, self.t_max, self.alpha, beta0)
+                                                                         sir_0, self.t_max, self.alpha, beta0_val)
                         print("loss on validation set: %f" % loss_history_val[i_history])
                     i_history = i_history + 1
                 """
@@ -145,7 +145,7 @@ class NetworkForSIR:
                 """
         except KeyboardInterrupt:
             print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
-        return loss_history, loss_history_val
+        return loss_history, loss_history_val, i_history
     # volendo si possono aggiungere qui metodi per fare plot e cose simili  
     def compute_beta_I(self, dataset, sir_0, beta0):
         N = dataset.shape[1]
