@@ -61,7 +61,6 @@ with open(args.file, 'r') as file:
             data_dict[field.strip()] = value.strip()
 learning_rate = float(data_dict['learning_rate'])
 t_max = float(data_dict['t_max'])
-beta0 = float(data_dict['beta0'])
 alpha = float(data_dict['alpha'])
 training_steps = int(data_dict['training_steps'])
 display_step = int(data_dict['display_step'])
@@ -94,6 +93,16 @@ except FileNotFoundError:
     print('file',dataset_name,'not found...\n')
     sys.exit()
 # ora nei dataset ci sono solo le temperature: bisogna calcolare i beta esatti
+
+#####################
+# qualche print utile
+#####################
+print('data:\n')
+print('S0: ', S0, ', I0: ', I0, ', S_inf: ', S_inf)
+print('bet_ref: ', b_ref)
+print('K:', dataset.shape[0], ', K_val:', val_set.shape[1], ', K_test: ', test_set.shape[0])
+print('t_max: ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
+print('hidden neurons: ', n_hidden, '\n')
 
 #################################
 # vengono calcolati i beta esatti
@@ -135,13 +144,23 @@ if args.plot_test:
     plot_solutions.plot_beta_I(beta_test, I_test, b_test_nn, I_test_nn, \
                            "test", 1)
 
+#################
+# plot della loss
+#################
+
 if len(args.save_model)>0:
     model.save_model(args.save_model)
 if args.train:
-    plt.plot(np.arange(0, it), loss_train[0:it])
-    plt.plot(np.arange(0, it), loss_val[0:it])
+    plt.plot(display_step*np.arange(0, it), loss_train[0:it])
+    plt.plot(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
     plt.title("loss evolution")
     plt.show()
+    plt.semilogy(display_step*np.arange(0, it), loss_train[0:it])
+    plt.semilogy(display_step*np.arange(0, it), loss_val[0:it])
+    plt.legend(["loss train", "loss val"])
+    plt.title("loss evolution (semilog scale)")
+    plt.show()
+    
 
 

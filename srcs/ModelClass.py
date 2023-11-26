@@ -8,7 +8,8 @@ tf.keras.backend.set_floatx('float64')
 
 
 class Model:
-    def __init__(self, n_hidden, learning_rate, b_ref, addDropout = False ,addBNorm = True, load_path = ''):
+    def __init__(self, n_hidden, learning_rate, b_ref, addDropout = False ,\
+                 addBNorm = True, load_path = '', NormalizeInput = False):
         self.n_input = 2
         self.n_hidden = n_hidden
         self.b_ref = b_ref
@@ -26,30 +27,11 @@ class Model:
             'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
             }
             print("Generating new model with standard parameters ...\n")
-            """
-            model = tfk.Sequential()
-            model.add(tfkl.Dense(
-                units=n_hidden,
-                input_dim=self.n_input,
-                activation=None,
-                use_bias=True,
-                kernel_initializer="glorot_uniform",
-                bias_initializer="zeros",
-                kernel_regularizer=None,
-                bias_regularizer=None,
-                activity_regularizer=None,
-                kernel_constraint=None,
-                bias_constraint=None))
-            if (addBNorm):
-                model.add(tfkl.BatchNormalization())
-            model.add(tfkl.Activation('sigmoid'))
-            if (addDropout):
-                model.add(tfkl.Dropout(0.3))
-            model.add(tfkl.Dense(1))
-            if (addBNorm):
-                model.add(tfkl.BatchNormalization())
-            self.model = model
-            """
+            
+        if not NormalizeInput:
+            self.g = self.g_not_normalized
+        else:
+            self.g = self.g_normalized
             
         self.optimizer = tf.optimizers.Adam(learning_rate)
         self.n_iter = 0
@@ -58,7 +40,12 @@ class Model:
         layer_1 = tf.nn.sigmoid(layer_1)
         output = tf.matmul(layer_1, self.weights['out']) + self.biases['out']
         return output
-    def g(self, y, v):
+    def g_not_normalized(self, y, v):
+        v.shape = (v.shape[0], 1)
+        tv = tf.constant(v, dtype='float64')
+        x = tf.concat([y, tv], 1)
+        return self.multilayer_perceptron(x)
+    def g_normalized(self, y, v):
         y = (1.0/self.b_ref)*y
         v = (1.0/self.b_ref)*v
         v.shape = (v.shape[0], 1)
@@ -173,3 +160,33 @@ class NetworkForSIR:
             curr_I_nn = next_I_nn
         return beta_return, I_return
             
+    
+    
+    
+    
+    
+    
+"""
+model = tfk.Sequential()
+model.add(tfkl.Dense(
+    units=n_hidden,
+    input_dim=self.n_input,
+    activation=None,
+    use_bias=True,
+    kernel_initializer="glorot_uniform",
+    bias_initializer="zeros",
+    kernel_regularizer=None,
+    bias_regularizer=None,
+    activity_regularizer=None,
+    kernel_constraint=None,
+    bias_constraint=None))
+if (addBNorm):
+    model.add(tfkl.BatchNormalization())
+model.add(tfkl.Activation('sigmoid'))
+if (addDropout):
+    model.add(tfkl.Dropout(0.3))
+model.add(tfkl.Dense(1))
+if (addBNorm):
+    model.add(tfkl.BatchNormalization())
+self.model = model
+"""
