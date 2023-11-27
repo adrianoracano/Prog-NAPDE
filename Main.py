@@ -118,9 +118,12 @@ I_train, I_val, I_test = shf.compute_I([beta_train, beta_val, beta_test],\
                                        t_max, alpha, [S0, I0, R0])
     
 
+if len(dataset.shape) == 2:
+    n_input = 2
+else:
+    n_input = dataset.shape[2]+1
 
-
-model = ModelClass.Model(n_hidden, learning_rate, b_ref, \
+model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
                    addDropout = False ,addBNorm = True, \
                    load_path = args.load_model)
 

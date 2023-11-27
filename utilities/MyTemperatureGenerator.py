@@ -101,10 +101,22 @@ def generate_temp_by_adri(beta_ref):
         return altezza + ampiezza*(math.cos((t-9-mese)*2*math.pi/12))*Tamp + Tmean + ampiezza_noise*math.cos(tau_noise*t)
     def T_return(t):
         #return beta_ref - Tcos(t*12)/6.0 - 3.0
-        return (Tcos(t*12) - Tmean)/(Tamp + 0.7)*0.3*beta_ref + 0.45*beta_ref
+        return (Tcos(t*12) - Tmean)/(Tamp + 0.7)*0.3*beta_ref*2 + beta_ref
     def Betaeq_return(t):
         return (Tmean - Tcos(t*12))/(Tamp + 0.7)*0.3*beta_ref + 0.45*beta_ref
     return T_return, Betaeq_return
+
+def generate_lockdown_function():
+    num_tratti = random.randint(5, 8)
+    points = sorted([random.random() for _ in range(num_tratti-1)])
+    intervals = [0] + points + [1]
+    values = [random.randint(0, 3)/3 for _ in range(num_tratti)]
+    
+    def f_return(x):
+        for i in range(len(intervals) - 1):
+            if intervals[i] <= x < intervals[i + 1]:
+                return values[i]
+    return f_return
 
     
         
