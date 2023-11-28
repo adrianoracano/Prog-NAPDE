@@ -8,9 +8,9 @@ tf.keras.backend.set_floatx('float64')
 
 
 class Model:
-    def __init__(self, n_hidden, learning_rate, b_ref, addDropout = False ,\
+    def __init__(self, n_input, n_hidden, learning_rate, b_ref, addDropout = False ,\
                  addBNorm = True, load_path = '', NormalizeInput = False):
-        self.n_input = 2
+        self.n_input = n_input
         self.n_hidden = n_hidden
         self.b_ref = b_ref
         self.n_output = 1
@@ -41,18 +41,20 @@ class Model:
         output = tf.matmul(layer_1, self.weights['out']) + self.biases['out']
         return output
     def g_not_normalized(self, y, v):
-        v.shape = (v.shape[0], 1)
+        v.shape = (v.shape[0], self.n_input-1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
         return self.multilayer_perceptron(x)
     def g_normalized(self, y, v):
         y = (1.0/self.b_ref)*y
         v = (1.0/self.b_ref)*v
-        v.shape = (v.shape[0], 1)
+        v.shape = (v.shape[0], self.n_input-1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
         return self.multilayer_perceptron(x)
-    def custom_loss(self, dataset, I, sir_0, t_max, alpha, beta0):
+    def g_single_input(self, y):
+        return self.multilayer_perceptron(y)
+    def custom_loss(self, dataset, I, sir_0, t_max, alpha, beta0): 
         summation = []
         K = I.shape[0]
         N = I.shape[1]
@@ -161,7 +163,16 @@ class NetworkForSIR:
         return beta_return, I_return
             
     
-    
+# TODO:
+    # 1) Model è da rendere una classe base (ModelBase), la definizione di custom_loss
+    #   è lasciata da definire alle classi derivate. Quindi si avrà una classe 
+    #   del tipo: ModelSIR che utilizza il sir per definire la loss
+    # 2) NetworkForSir deve essere indipendente dal moedllo epidemiologico scelto, quindi:
+        # * rinominare la classe, e chiamarla NetworkForPandemic (o qualcosa di simile)
+        # * La funzione compute_beta_I non deve usare uno step di EA sul SIR, 
+        #   quindi deve utilizzare una qualche funzione definita dal membro self.model
+        #   Una possibile idea è definire in ModelSIR un metodo chiamato ForwardEulerStep
+    # 3) Rendere possibile la creazione di una rete con un solo input (beta)
     
     
     

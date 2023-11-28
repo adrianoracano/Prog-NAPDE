@@ -72,23 +72,53 @@ def compute_I(betas, t_max, alpha, sir_0):
     return Is
     
 def compute_beta(datasets, beta0s, t_max, tau, b_ref):
-    def f(b, T):
-        return (1.0/tau)*(0.9*b_ref - T - b)
-    real_beta = []
-    J = len(datasets)
-    for j in range(J):
-        temps = datasets[j]
-        beta0 = beta0s[j]
-        beta0.shape = (beta0.shape[0])
-        N = temps.shape[1]
-        K = temps.shape[0]
-        beta = np.zeros([K, N])
-        dt = 1.0/N
-        beta[:, 0] = beta0
-        for i in range(N-1):
-            beta[:, i+1] = beta[:, i] + dt*t_max*f(beta[:, i], temps[:, i])
-        real_beta.append(beta.copy())
-    return real_beta
+    if len(datasets[0].shape) == 2:
+        def f(b, T):
+            return (1.0/tau)*(2*b_ref - T - b)/(1 + b**2 )
+        real_beta = []
+        J = len(datasets)
+        for j in range(J):
+            temps = datasets[j]
+            beta0 = beta0s[j]
+            beta0.shape = (beta0.shape[0])
+            N = temps.shape[1]
+            K = temps.shape[0]
+            beta = np.zeros([K, N])
+            dt = 1.0/N
+            beta[:, 0] = beta0
+            for i in range(N-1):
+                # beta[:, i+1] = beta[:, i] + dt*t_max*f(beta[:, i], temps[:, i])
+                
+                k1 = t_max*dt * f(beta[:, i], temps[:, i])
+                k2 = t_max*dt * f( beta[:, i] + k1/2, 0.5*(temps[:, i]+temps[:, i+1]) )
+                k3 = t_max*dt * f(beta[:, i] + k2/2, 0.5*(temps[:, i]+temps[:, i+1]) )
+                k4 = t_max*dt * f(beta[:, i] + k3, temps[:, i+1])
+                beta[:, i+1] = beta[:, i] + (1/6) * (k1 + 2*k2 + 2*k3 + k4)
+                
+                
+            real_beta.append(beta.copy())
+        return real_beta
+    
+    if len(datasets[0].shape) == 3 and datasets[0].shape[2] == 2:
+        # caso con in input temperatura e livello di isolamento
+        def f(b, T, iso):
+            return (1.0/tau)*( (2*b_ref - T)*(1-0.75*iso) - b )
+        real_beta = []
+        J = len(datasets)
+        for j in range(J):
+            temps = datasets[j][:, :, 0]
+            isos = datasets[j][:, :, 1]
+            beta0 = beta0s[j]
+            beta0.shape = (beta0.shape[0])
+            N = temps.shape[1]
+            K = temps.shape[0]
+            beta = np.zeros([K, N])
+            dt = 1.0/N
+            beta[:, 0] = beta0
+            for i in range(N-1):
+                beta[:, i+1] = beta[:, i] + dt*t_max*f(beta[:, i], temps[:, i], isos[:, i])
+            real_beta.append(beta.copy())
+        return real_beta
     
     
     

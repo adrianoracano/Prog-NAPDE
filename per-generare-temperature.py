@@ -26,7 +26,7 @@ with open('data.txt', 'r') as file:
             data_dict[field.strip()] = value.strip()
 
 N = 150
-K = 40
+K = 80
 K_test = 20
 K_val = 40
 train_fun_type = 'adriano-style'
@@ -34,12 +34,11 @@ val_fun_type = 'adriano-style'
 test_fun_type = 'adriano-style'
 alpha = 2.0
 S0 = 0.99
-S_inf = 0.03
+S_inf = 0.105
 b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
-nome_file = "prova_con_beta0.pkl"
-beta0_inf = 0.5
-beta0_sup = 5.0
-
+nome_file = "da_inviare_2.pkl"
+beta0_inf = 0
+beta0_sup = b_ref/2
 
 
 t = np.linspace(0, 1, N)
