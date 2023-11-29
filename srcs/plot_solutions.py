@@ -109,16 +109,19 @@ def Dataset_plot(dataset, beta0, g, f, train_or_test, save_plot = True, save_pat
 
 """
 
-def plot_beta_I(beta, I, beta_nn, I_nn, set_type = '', plot_display = 1):
-    K = beta.shape[0]
-    N = beta.shape[1]
+def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1):
+    K = beta_nn.shape[0]
+    N = beta_nn.shape[1]
     t = np.linspace(0., 1., N)
     for k in range(K):
         if k % plot_display == 0:
             fig, (ax1, ax2) = plt.subplots(2)
             ax1.plot(t, beta_nn[k, :])
-            ax1.plot(t, beta[k, :])
-            ax1.legend(["beta rete", "beta reali"])
+            if len(beta) > 0: # di default beta = [], vuol dire che i beta veri non sono noti
+                ax1.plot(t, beta[k, :])
+                ax1.legend(["beta rete", "beta reali"])
+            else:
+                ax1.legend(["beta rete"])
             ax2.plot(t, I_nn[k, :])
             ax2.plot(t, I[k, :])
             ax2.legend(["infetti rete", "infetti reali"])
