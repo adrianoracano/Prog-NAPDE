@@ -52,17 +52,17 @@ class Model:
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
         return self.multilayer_perceptron(x)
-    def g_single_input(self, y):
-        return self.multilayer_perceptron(y)
-    def custom_loss(self, dataset, I, sir_0, t_max, alpha, beta0): 
+    def custom_loss(self, dataset, I, t_max, alpha, beta0): 
         summation = []
         K = I.shape[0]
         N = I.shape[1]
         b = np.zeros([K, 1], dtype = 'float64')
         b[:, 0] = beta0 # potrebbe dare problemi?
         curr_beta = tf.constant(b, dtype='float64')
-        curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
-        curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
+        # curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
+        curr_I_nn = tf.constant( I[:, 0], dtype='float64', shape = (K, 1))
+        # curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
+        curr_S_nn = tf.constant(1.0-I[:, 0], dtype='float64', shape = (K, 1))
         dt = 1.0/N
         for i in range(N - 1):
             next_beta = curr_beta + t_max *dt * self.g(curr_beta, dataset[:, i])
@@ -77,9 +77,9 @@ class Model:
             curr_I_nn = next_I_nn
         return tf.reduce_sum(summation)
 
-    def train_step(self, dataset, I, sir_0, t_max, alpha, beta0):
+    def train_step(self, dataset, I, t_max, alpha, beta0):
         with tf.GradientTape() as tape:
-            loss = self.custom_loss(dataset, I, sir_0, t_max, alpha, beta0)
+            loss = self.custom_loss(dataset, I, t_max, alpha, beta0)
         # trainable_variables = self.model.trainable_variables
         trainable_variables = list(self.weights.values())+list(self.biases.values())
         gradients = tape.gradient(loss, trainable_variables)
@@ -105,7 +105,7 @@ class NetworkForSIR:
         self.display_step = display_step
         self.t_max = t_max
         self.alpha = alpha
-    def train(self, dataset, I, val_set, I_val, sir_0, beta0_train, beta0_val, max_iter, display_weights, validate = True):
+    def train(self, dataset, I, val_set, I_val, beta0_train, beta0_val, max_iter, display_weights, validate = True):
         print('modificato')
         display_step = self.display_step
         print("Starting the training...\n")
@@ -115,15 +115,15 @@ class NetworkForSIR:
         loss_history_val = np.zeros(int(max_iter / display_step))
         try:
             for i in range(max_iter):
-                self.model.train_step(dataset, I, sir_0, self.t_max, self.alpha, beta0_train)
+                self.model.train_step(dataset, I,  self.t_max, self.alpha, beta0_train)
                 if i % display_step == 0:
                     print("iterazione %i:" % i)
                     loss_history[i_history] = self.model.custom_loss(dataset, I, \
-                                                                     sir_0, self.t_max, self.alpha, beta0_train)
+                                                                     self.t_max, self.alpha, beta0_train)
                     print("loss on training set: %f " % loss_history[i_history])
                     if validate:
                         loss_history_val[i_history] = self.model.custom_loss(val_set, I_val, \
-                                                                         sir_0, self.t_max, self.alpha, beta0_val)
+                                                                         self.t_max, self.alpha, beta0_val)
                         print("loss on validation set: %f" % loss_history_val[i_history])
                     i_history = i_history + 1
                 """
@@ -136,19 +136,19 @@ class NetworkForSIR:
             print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
         return loss_history, loss_history_val, i_history
     # volendo si possono aggiungere qui metodi per fare plot e cose simili  
-    def compute_beta_I(self, dataset, sir_0, beta0):
+    def compute_beta_I(self, dataset, I0, beta0):
         N = dataset.shape[1]
         K = dataset.shape[0]
         b = np.zeros([K, 1], dtype = 'float64')
         b[:, 0] = beta0 # potrebbe dare problemi?
         curr_beta = tf.constant(b, dtype='float64')
-        curr_S_nn = tf.constant(sir_0[0] * np.ones([K, 1], dtype='float64'), dtype='float64')
-        curr_I_nn = tf.constant(sir_0[1] * np.ones([K, 1], dtype='float64'), dtype='float64')
+        curr_I_nn = tf.constant( I0, dtype='float64', shape = (K, 1))
+        curr_S_nn = tf.constant(1.0-I0, dtype='float64', shape = (K, 1))
         dt = 1.0/N
         beta_return = np.zeros([K, N], dtype='float64')
         I_return = np.zeros([K, N], dtype='float64')
-        beta_return[:, 0]=beta0
-        I_return[:, 0] = sir_0[1]
+        beta_return[:, 0] = beta0
+        I_return[:, 0] = I0
         for i in range(N-1):
             next_beta = curr_beta + self.t_max * dt * self.model.g(curr_beta, dataset[:, i])
             beta_return[:, i+1] = next_beta.numpy()[:, 0].copy()

@@ -46,6 +46,8 @@ parser.add_argument('-pte', '--plot-test', help='plot using the test set', actio
 parser.add_argument('-o', '--overwrite', help='save and load the weights from the specified file', default='')
 parser.add_argument('-sp', '--save-plots', help='save the plots in the specified file after the training', default='')
 parser.add_argument('-sm', '--save-model', help='save the model file in the specified directory after the training', default='')
+parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
+
 
 args = parser.parse_args()
 
@@ -72,7 +74,6 @@ n_hidden = int(data_dict['n_hidden'])
 display_weights = int(data_dict['display_weights'])
 dataset_name = data_dict['dataset']
 tau = float(data_dict['tau'])
-n_input = 2
 
 ##################
 # calcolo di b_ref
@@ -87,7 +88,13 @@ b_ref = alpha * math.log(S0/S_inf) / (1.0 - S_inf)
 path_dataset = 'datasets/'+ dataset_name
 try:
     with open(path_dataset, 'rb') as file:
-        dataset,val_set,test_set,beta0_train,beta0_val,beta0_test = pickle.load(file)  # viene caricato il  dataset
+        if args.test_case:
+            dataset,val_set,test_set,beta0_train,beta0_val,beta0_test = pickle.load(file)  # viene caricato il  dataset
+        else: 
+            # Se si vogliono utilizzare dati reali vengono caricati gli infetti
+            # e dati vari, come le temperature e i valori di beta0
+            I_train, I_val, dataset, val_set, beta0_train,beta0_val = pickle.load(file)
+            
     print('dataset', dataset_name, 'loaded...\n')
 except FileNotFoundError:
     print('file',dataset_name,'not found...\n')
@@ -100,23 +107,27 @@ except FileNotFoundError:
 print('data:\n')
 print('S0: ', S0, ', I0: ', I0, ', S_inf: ', S_inf)
 print('bet_ref: ', b_ref)
-print('K:', dataset.shape[0], ', K_val:', val_set.shape[1], ', K_test: ', test_set.shape[0])
+print('K:', dataset.shape[0], ', K_val:', val_set.shape[0])
 print('t_max: ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
 print('hidden neurons: ', n_hidden, '\n')
 
-#################################
-# vengono calcolati i beta esatti
-#################################
-beta_train, beta_val, beta_test = shf.compute_beta([dataset, val_set, test_set],\
-                                                   [beta0_train, beta0_val, beta0_test],\
-                                                   t_max, tau, b_ref)
+# se si vuole fare il training su dati sintetici bisogna calcolare i beta e 
+# gli infetti:
 
-########################
-# vengono calcolate le I
-########################
-I_train, I_val, I_test = shf.compute_I([beta_train, beta_val, beta_test],\
-                                       t_max, alpha, [S0, I0, R0])
-    
+if args.test_case:
+    #################################
+    # vengono calcolati i beta esatti
+    #################################
+    beta_train, beta_val, beta_test = shf.compute_beta([dataset, val_set, test_set],\
+                                                       [beta0_train, beta0_val, beta0_test],\
+                                                       t_max, tau, b_ref)
+    ########################
+    # vengono calcolate le I
+    ########################
+    I_train, I_val, I_test = shf.compute_I([beta_train, beta_val, beta_test],\
+                                           t_max, alpha, [S0, I0, R0])
+        
+# il numero di neuroni in input vengono dedotti dalla shape del dataset
 
 if len(dataset.shape) == 2:
     n_input = 2
@@ -132,20 +143,34 @@ network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
 
 if args.train:
-    loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, [S0, I0, R0], \
+    loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, \
                                              beta0_train, beta0_val, \
                                              training_steps, display_weights, validate = True)
 
-b_train_nn, I_train_nn = network.compute_beta_I(dataset, [S0, I0, R0], beta0_train)
-b_val_nn, I_val_nn = network.compute_beta_I(val_set, [S0, I0, R0], beta0_val)
-b_test_nn, I_test_nn = network.compute_beta_I(test_set, [S0, I0, R0], beta0_test)
+b_train_nn, I_train_nn = network.compute_beta_I(dataset, I_train[:, 0], beta0_train)
+b_val_nn, I_val_nn = network.compute_beta_I(val_set, I_val[:, 0], beta0_val)
+if args.test_case:
+    b_test_nn, I_test_nn = network.compute_beta_I(test_set, I_test[:, 0], beta0_test)
 
-if args.plot_train:
-    plot_solutions.plot_beta_I(beta_train, I_train, b_train_nn, I_train_nn, \
+########################
+# plot di beta e infetti
+########################
+
+# se è un test case allora si conoscono anche i beta esatti che quindi vengono 
+# plottati
+if args.plot_train and args.test_case:
+    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
                            "train", 5)
-if args.plot_test:
-    plot_solutions.plot_beta_I(beta_test, I_test, b_test_nn, I_test_nn, \
+if args.plot_test and args.test_case:
+    plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
                            "test", 1)
+# se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
+# fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
+# dei beta calcolati dalla rete
+if args.plot_train and  not args.test_case:
+    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1)
+if args.plot_test and not args.test_case:
+    plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1)
 
 #################
 # plot della loss
