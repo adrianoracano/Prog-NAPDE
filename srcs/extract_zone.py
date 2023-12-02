@@ -72,15 +72,41 @@ def extract_zones(path, n_timesteps):
     dsz = pd.DataFrame(data = nomi_regioni, index = index)
     init = np.ones(shape = ( len(index), len(dsz.columns))) * b
     dsz.loc[:] = init
-    
-    
+
+    #creazione tupla di regioni per riempire il dataset
+    Abruzzo = 'Abruzzo'
+    Basilicata = 'Basilicata'
+    Calabria = 'Calabria'
+    Campania = 'Campania'
+    EmiliaRomagna = 'Emilia-Romagna'
+    FriuliVeneziaGiulia = 'Friuli Venezia Giulia'
+    Lazio = 'Lazio'
+    Liguria = 'Liguria'
+    Lombardia = 'Lombardia'
+    Marche = 'Marche'
+    Molise = 'Molise'
+    PABolzano = 'P.A. Bolzano'
+    PATrento = 'P.A. Trento'
+    Piemonte = 'Piemonte'
+    Puglia = 'Puglia'
+    Sardegna = 'Sardegna'
+    Sicilia = 'Sicilia'
+    Toscana = 'Toscana'
+    Umbria = 'Umbria'
+    ValledAosta = "Valle d'Aosta"
+    Veneto = 'Veneto'
+
+    tupla_reg = (
+    Abruzzo, Basilicata, Calabria, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Marche,
+    Molise, PABolzano, PATrento, Piemonte, Puglia, Sardegna, Sicilia, Toscana, Umbria, ValledAosta, Veneto)
+
     #riempimento del dataset di zone , si poteva anche usare la funzione:
-    # def riempi(dsz, data1, data2, regioni, colore):
-    #   if len(regioni) == 0:
-    #     #regioni è una tupla : (regione1, regione2, ...)
-    #     dsz.loc[data1 : data2, regioni] = np.ones(shape = np.array(dsz.loc[data1 : data2, regioni]).shape) * colore
-    #   else:
-    #     dsz.loc[data1 : data2] = np.ones(shape = np.array(dsz.loc[data1 : data2]).shape) * colore
+    def riempi(dsz, data1, data2, regioni, colore):
+      if not (len(regioni) == 0):
+        #regioni è una tupla : (regione1, regione2, ...)
+        dsz.loc[data1 : data2, regioni] = np.ones(shape = np.array(dsz.loc[data1 : data2, regioni]).shape) * colore
+      else:
+        dsz.loc[data1 : data2] = np.ones(shape = np.array(dsz.loc[data1 : data2]).shape) * colore
     
     dsz['Lombardia'].loc['24 Febbraio 2020' : '8 Marzo 2020'] = np.ones(shape = np.array(dsz['Lombardia'].loc['24 Febbraio 2020' : '8 Marzo 2020']).shape) * r
     
@@ -131,11 +157,94 @@ def extract_zones(path, n_timesteps):
     data1 = '7 Gennaio 2021'
     data2 = '23 Febbraio 2021'
     dsz.loc[data1 : data2] = np.ones(shape = np.array(dsz.loc[data1 : data2]).shape) * r
-    
-    
+
+    riempi(dsz, '1 Marzo 2021', '7 Marzo 2021',
+           ('Calabria', 'Friuli Venezia Giulia', 'Lazio', 'Liguria', 'Puglia', 'Sicilia', "Valle d'Aosta", 'Veneto'), g)
+    riempi(dsz, '1 Marzo 2021', '7 Marzo 2021', ('Basilicata', 'Molise'), r)
+    # riempi(dsz, '1 Marzo 2021', '7 Marzo 2021', 'Sardegna', b)
+    riempi(dsz, '1 Marzo 2021', '7 Marzo 2021', (
+    'Abruzzo', 'Campania', 'Emilia-Romagna', 'Lombardia', 'Marche', 'Piemonte', 'Toscana', 'P.A. Bolzano',
+    'P.A. Trento', 'Umbria'), a)
+
+    riempi(dsz, '8 Marzo 2021', '14 Marzo 2021', (Calabria, Lazio, Liguria, Puglia, Sicilia, ValledAosta), g)
+    riempi(dsz, '8 Marzo 2021', '14 Marzo 2021', (
+    Abruzzo, EmiliaRomagna, FriuliVeneziaGiulia, Lombardia, Marche, Piemonte, Toscana, PABolzano, PATrento, Umbria,
+    Veneto), a)
+    riempi(dsz, '8 Marzo 2021', '14 Marzo 2021', (Basilicata, Campania, Molise), r)
+    # riempi(dsz, '8 Marzo 2021', '14 Marzo 2021', 'Sardegna', b)
+
+    riempi(dsz, '15 Marzo 2021', '21 Marzo 2021',
+           (Abruzzo, Basilicata, Calabria, Liguria, PABolzano, Sicilia, Toscana, Umbria, ValledAosta), a)
+    riempi(dsz, '15 Marzo 2021', '21 Marzo 2021', (
+    Abruzzo, EmiliaRomagna, FriuliVeneziaGiulia, Lombardia, Marche, Piemonte, Toscana, PABolzano, PATrento, Umbria,
+    Veneto), a)
+    riempi(dsz, '15 Marzo 2021', '21 Marzo 2021', (
+    Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Lombardia, Marche, Molise, PATrento, Piemonte, Puglia, Veneto),
+           r)
+    # riempi(dsz, '15 Marzo 2021', '21 Marzo 2021', 'Sardegna', b)
+
+    riempi(dsz, '22 Marzo 2021', '28 Marzo 2021', tupla_reg, a)
+    riempi(dsz, '22 Marzo 2021', '28 Marzo 2021',
+           (Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Lombardia, Marche, Piemonte, PATrento, Puglia, Veneto),
+           r)
+
+    riempi(dsz, '29 Marzo 2021', '5 Aprile 2021', tupla_reg, a)
+    riempi(dsz, '29 Marzo 2021', '5 Aprile 2021', (
+    Calabria, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Lombardia, Marche, Piemonte, PATrento, Puglia,
+    Toscana, ValledAosta, Veneto), r)
+
+    riempi(dsz, '6 Aprile 2021', '11 Aprile 2021', tupla_reg, a)
+    riempi(dsz, '6 Aprile 2021', '11 Aprile 2021',
+           (Calabria, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lombardia, Piemonte, Puglia, Toscana, ValledAosta),
+           r)
+
+    riempi(dsz, '12 Aprile 2021', '18 Aprile 2021', tupla_reg, a)
+    riempi(dsz, '12 Aprile 2021', '18 Aprile 2021', (Campania, Puglia, Sardegna, ValledAosta), r)
+
+    riempi(dsz, '19 Aprile 2021', '25 Aprile 2021', tupla_reg, a)
+    riempi(dsz, '19 Aprile 2021', '25 Aprile 2021', (Puglia, Sardegna, ValledAosta), r)
+
+    riempi(dsz, '26 Aprile 2021', '2 Maggio 2021', (Sardegna), r)
+    riempi(dsz, '26 Aprile 2021', '2 Maggio 2021', (Basilicata, Calabria, Puglia, Sicilia, ValledAosta), a)
+    riempi(dsz, '26 Aprile 2021', '2 Maggio 2021', (
+    Abruzzo, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Marche, Molise, Piemonte,
+    PABolzano, PATrento, Toscana, Umbria, Veneto), g)
+
+    riempi(dsz, '3 Maggio 2021', '9 Maggio 2021', ("Valle d'Aosta"), r)
+    riempi(dsz, '3 Maggio 2021', '9 Maggio 2021', (Basilicata, Calabria, Puglia, Sicilia, Sardegna), a)
+    riempi(dsz, '3 Maggio 2021', '9 Maggio 2021', (
+    Abruzzo, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Marche, Molise, Piemonte,
+    PABolzano, PATrento, Toscana, Umbria, Veneto), g)
+
+    riempi(dsz, '10 Maggio 2021', '16 Maggio 2021', (Sardegna, Sicilia, ValledAosta), a)
+    riempi(dsz, '10 Maggio 2021', '16 Maggio 2021', (
+    Abruzzo, Basilicata, Calabria, Campania, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Marche,
+    Molise, Piemonte, PABolzano, PATrento, Puglia, Toscana, Umbria, Veneto), g)
+
+    riempi(dsz, '17 Maggio 2021', '23 Maggio 2021', tupla_reg, g)
+    riempi(dsz, '17 Maggio 2021', '23 Maggio 2021', (ValledAosta), a)
+
+    riempi(dsz, '24 Maggio 2021', '30 Maggio 2021', tupla_reg, g)
+
+    riempi(dsz, '31 Maggio 2021', '6 Giugno 2021', tupla_reg, g)
+    riempi(dsz, '31 Maggio 2021', '6 Giugno 2021', (FriuliVeneziaGiulia, Molise, Sardegna), b)
+
+    riempi(dsz, '7 Giugno 2021', '13 Giugno 2021',
+           (Basilicata, Calabria, Campania, Marche, PABolzano, Sicilia, Toscana, ValledAosta), g)
+    riempi(dsz, '7 Giugno 2021', '13 Giugno 2021', (
+    Abruzzo, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Molise, Piemonte, PATrento, Puglia,
+    Sardegna, Umbria, Veneto), b)
+
+    riempi(dsz, '14 Giugno 2021', '20 Giugno 2021',
+           (Basilicata, Calabria, Campania, Marche, PABolzano, Sicilia, Toscana, ValledAosta), g)
+    riempi(dsz, '14 Giugno 2021', '20 Giugno 2021', (
+    Abruzzo, EmiliaRomagna, FriuliVeneziaGiulia, Lazio, Liguria, Lombardia, Molise, Piemonte, PATrento, Puglia,
+    Sardegna, Umbria, Veneto), b)
+
+    riempi(dsz, '21 Giugno 2021', '27 Giugno 2021', tupla_reg, b)
+    riempi(dsz, '21 Giugno 2021', '27 Giugno 2021', (ValledAosta), g)
     
     dsz=dsz.reindex(columns=reg_list)
-    
     
     dsz = dsz.drop(columns = ['Molise', "Valle d'Aosta"])
     dsz = dsz.loc['24 Febbraio 2020' : '31 Dicembre 2020']
