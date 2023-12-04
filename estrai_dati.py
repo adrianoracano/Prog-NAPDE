@@ -9,9 +9,9 @@ import pickle
 ###################
 
 # scrivere il percorso delle cartelle
-path_t = "..."
-path_i = "..."
-path_z = "..."
+path_t = "..\prova-estrazione-temp\Temperature"
+path_i = "..\dati-regioni"
+path_z = "..\dati-regioni"
 
 # scegliere il nome del file
 nome_file = "PROVA_VERA.pkl"
@@ -20,7 +20,7 @@ nome_file = "PROVA_VERA.pkl"
 eps_I0 = 1e-4
 
 # scegliere il numero di timesteps (se lo si vuole diminuire)
-n_timesteps = 312
+n_timesteps = 200
 
 # scegliere il numero di regioni per il training set (il resto è validation set)
 K_train = 10
@@ -34,7 +34,7 @@ beta0 = np.repeat(2.5, 19)
 
 # per rendere le temperature regolari. 0 vuol dire che le temperature 
 # non vengono cambiate
-smooth_param = 0
+smooth_param = 5
 
 #######################
 # fine dati dascegliere
@@ -42,7 +42,7 @@ smooth_param = 0
 
 temperature = ext.extract_temperatures(path_t,  n_timesteps) 
 infetti = exi.extract_infects(path_i, n_timesteps)
-zone = exz.extract_zones(path_z, n_timesteps)
+# zone = exz.extract_zones(path_z, n_timesteps)
 
 infetti[:, 0] = infetti[:, 0] + eps_I0
 
