@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 import glob
+import re
 
 pd.options.display.max_columns = 21
 
 
-def extract_infects(path, n_timesteps):
+def extract_infects(path, n_timesteps, start):
     dir_path = path
     #ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
     ngiorni = 366
@@ -21,7 +22,6 @@ def extract_infects(path, n_timesteps):
     reg_list.insert(len(reg_list),'P.A. Bolzano')
     reg_list.insert(len(reg_list),'P.A. Trento')
     nomi_regioni = dict.fromkeys(reg_list, 0)
-    print(nomi_regioni)
     df=df.reindex(columns=reg_list)
     tot_regione = {
     	'Lombardia' :	9950742,
@@ -61,11 +61,19 @@ def extract_infects(path, n_timesteps):
         giorno = giorno + 1
     
     dfi = dfi / tot_regione
-    print(dfi.columns)
     dfi=dfi.reindex(columns=reg_list)
-    print(dfi.columns)
     dfi = dfi.drop(columns = ['Molise', "Valle d'Aosta"])
-    dfi = dfi.loc[0:311]
+
+    n_giorni = 365
+    d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
+    giorni_prec = 0
+    for curr_m in range(m)[1:]:
+        giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
+                curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
+    giorni_prec = giorni_prec + 1 * (y == 2020)
+    index_start = giorni_prec + d;
+
+    dfi = dfi.loc[index_start : index_start + n_giorni]
     
     I_vec = np.array(dfi).transpose()
     new_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps)
