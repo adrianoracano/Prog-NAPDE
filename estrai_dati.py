@@ -30,8 +30,8 @@ temps_and_lockdown = False
 
 # segliere i valori di beta0
 beta0 = np.repeat(2.5, 19)
-
-# per rendere le temperature regolari. 0 vuol dire che le temperature 
+Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
+# per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
 smooth_param = 0
 
@@ -39,7 +39,7 @@ smooth_param = 0
 # fine dati dascegliere
 #######################
 
-start_vec = ['24/02/2020' , '24/04/2020', '24/05/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec = ['18/03/2020' , '24/04/2020', '24/05/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 
 start = start_vec[0]
 temperature = ext.extract_temperatures(path_t,  n_timesteps, start)
@@ -52,6 +52,9 @@ for start in start_vec[1:]:
     zone = np.concatenate((exz.extract_zones(n_timesteps, start), zone), axis = 0)
 
 infetti[:, 0] = infetti[:, 0] + eps_I0
+S0 = 1 - infetti[:,0]
+beta0 = Rt * alpha / S0;
+
 
 n_date = len(start_vec)
 K_train = K_train * n_date;
