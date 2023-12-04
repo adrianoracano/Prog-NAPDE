@@ -9,12 +9,11 @@ import pickle
 ###################
 
 # scrivere il percorso delle cartelle
-path_t = "..."
-path_i = "..."
-path_z = "..."
+path_t = "Temperature"
+path_i = "COVID-19/dati-regioni"
 
 # scegliere il nome del file
-nome_file = "PROVA_VERA.pkl"
+nome_file = "PROVA_VERA_3date.pkl"
 
 # valore sommato agli infetti iniziali
 eps_I0 = 1e-4
@@ -40,12 +39,22 @@ smooth_param = 0
 # fine dati dascegliere
 #######################
 
-temperature = ext.extract_temperatures(path_t,  n_timesteps) 
-infetti = exi.extract_infects(path_i, n_timesteps)
-zone = exz.extract_zones(path_z, n_timesteps)
+start_vec = ['24/02/2020' , '24/04/2020', '24/05/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+
+start = start_vec[0]
+temperature = ext.extract_temperatures(path_t,  n_timesteps, start)
+infetti = exi.extract_infects(path_i, n_timesteps, start)
+zone = exz.extract_zones(n_timesteps, start)
+
+for start in start_vec[1:]:
+    temperature = np.concatenate((ext.extract_temperatures(path_t,  n_timesteps, start),temperature), axis = 0)
+    infetti = np.concatenate((exi.extract_infects(path_i, n_timesteps, start), infetti), axis = 0)
+    zone = np.concatenate((exz.extract_zones(n_timesteps, start), zone), axis = 0)
 
 infetti[:, 0] = infetti[:, 0] + eps_I0
 
+n_date = len(start_vec)
+K_train = K_train * n_date;
 
 def replace_nan_with_previous(arr):
     # Trova le posizioni dei valori 'nan'
@@ -93,14 +102,13 @@ if not temps_and_lockdown:
     train_set = temperature[0:K_train, :]
     val_set = temperature[K_train:]
 if temps_and_lockdown:
-    K_val = 19-K_train
+    K_val = 19 * n_date - K_train
     train_set = np.zeros([K_train, n_timesteps, 2])
     val_set = np.zeros([K_val, n_timesteps, 2])
     train_set[:, :, 0] = temperature[0:K_train, :]
     train_set[:, :, 1] = zone[0:K_train, :]
     val_set[:, :, 0] = temperature[K_train:]
     val_set[:, :, 1] = zone[K_train:]
-
 
 
 with open('datasets/'+nome_file, 'wb') as file:

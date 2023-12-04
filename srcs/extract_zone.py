@@ -1,25 +1,36 @@
 import pandas as pd
 import numpy as np
 import glob
+import re
 
 pd.options.display.max_columns = 21
 
-def extract_zones(path, n_timesteps):
-    
-    dir_path = path#bisogna scaricare la repo del dpc e metterla in questa
-    #ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
-    ngiorni = 366
-    
-    
-    nreg = 21
-    all_files = sorted(glob.glob(dir_path + "*.csv"))
-    df = pd.read_csv(all_files[0])
-    
-    reg_list = list(df['denominazione_regione'])
-    reg_list.remove('P.A. Trento')
-    reg_list.remove('P.A. Bolzano')
-    reg_list.insert(len(reg_list),'P.A. Bolzano')
-    reg_list.insert(len(reg_list),'P.A. Trento')
+def extract_zones(n_timesteps, start):
+
+    n_giorni = 365
+
+    reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Molise',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     "Valle d'Aosta",
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
+
     nomi_regioni = dict.fromkeys(reg_list, 0)
     tot_regione = {
     	'Lombardia' :	9950742,
@@ -247,7 +258,17 @@ def extract_zones(path, n_timesteps):
     dsz=dsz.reindex(columns=reg_list)
     
     dsz = dsz.drop(columns = ['Molise', "Valle d'Aosta"])
-    dsz = dsz.loc['24 Febbraio 2020' : '31 Dicembre 2020']
+
+    n_giorni = 365
+    d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
+    giorni_prec = 0
+    for curr_m in range(m)[1:]:
+        giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
+                curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
+    giorni_prec = giorni_prec + 1 * (y == 2020)
+    index_start = giorni_prec + d;
+
+    dsz = dsz.loc[index[index_start : index_start + n_giorni]]
     
     Z_vec = np.array(dsz).transpose()
     arr_interp = np.zeros((Z_vec.shape[0], n_timesteps))
