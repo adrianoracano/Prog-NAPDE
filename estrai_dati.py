@@ -26,17 +26,17 @@ K_train = 10
 
 
 # scegliere se costruire il dataset con temperature e zone
-temps_and_lockdown = False
+temps_and_lockdown = True
 
 # segliere i valori di beta0
 beta0 = np.repeat(2.5, 19)
-Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
+# Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
 smooth_param = 0
 
 #######################
-# fine dati dascegliere
+# fine dati da scegliere
 #######################
 
 start_vec = ['18/03/2020' , '24/04/2020', '24/05/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
@@ -47,13 +47,13 @@ infetti = exi.extract_infects(path_i, n_timesteps, start)
 zone = exz.extract_zones(n_timesteps, start)
 
 for start in start_vec[1:]:
-    temperature = np.concatenate((ext.extract_temperatures(path_t,  n_timesteps, start),temperature), axis = 0)
-    infetti = np.concatenate((exi.extract_infects(path_i, n_timesteps, start), infetti), axis = 0)
-    zone = np.concatenate((exz.extract_zones(n_timesteps, start), zone), axis = 0)
+    temperature = np.concatenate((temperature, ext.extract_temperatures(path_t,  n_timesteps, start)), axis = 0)
+    infetti = np.concatenate((infetti, exi.extract_infects(path_i, n_timesteps, start)), axis = 0)
+    zone = np.concatenate((zone, exz.extract_zones(n_timesteps, start)), axis = 0)
 
 infetti[:, 0] = infetti[:, 0] + eps_I0
 S0 = 1 - infetti[:,0]
-beta0 = Rt * alpha / S0;
+# beta0 = Rt * alpha / S0;
 
 
 n_date = len(start_vec)
