@@ -2,10 +2,11 @@ import pandas as pd
 import numpy as np
 import glob
 import re
+import math
 
 pd.options.display.max_columns = 21
 
-def extract_zones(n_timesteps, start):
+def extract_zones(n_timesteps, start, n_mesi):
 
     n_giorni = 365
 
@@ -259,22 +260,25 @@ def extract_zones(n_timesteps, start):
     
     dsz = dsz.drop(columns = ['Molise', "Valle d'Aosta"])
 
-    n_giorni = 365
+    n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
     giorni_prec = 0
     for curr_m in range(m)[1:]:
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
-    giorni_prec = giorni_prec + 1 * (y == 2020)
-    index_start = giorni_prec + d;
+    giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
+    index_start = - 54 + giorni_prec + d;
 
     dsz = dsz.loc[index[index_start : index_start + n_giorni]]
     
     Z_vec = np.array(dsz).transpose()
-    arr_interp = np.zeros((Z_vec.shape[0], n_timesteps))
-    new_indices = np.linspace(0, Z_vec.shape[1] - 1, n_timesteps)
+    if n_timesteps < n_giorni:
+        arr_interp = np.zeros((Z_vec.shape[0], n_timesteps))
+        new_indices = np.linspace(0, Z_vec.shape[1] - 1, n_timesteps)
 
-    # Interpolazione lineare lungo l'asse N per ogni riga
-    for i in range(Z_vec.shape[0]):
-        arr_interp[i, :] = np.interp(new_indices, np.arange(Z_vec.shape[1]), Z_vec[i, :])
+        # Interpolazione lineare lungo l'asse N per ogni riga
+        for i in range(Z_vec.shape[0]):
+            arr_interp[i, :] = np.interp(new_indices, np.arange(Z_vec.shape[1]), Z_vec[i, :])
+    else: arr_interp = Z_vec
     return arr_interp
+
