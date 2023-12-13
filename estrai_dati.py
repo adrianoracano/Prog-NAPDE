@@ -9,7 +9,6 @@ import pickle
 ###################
 
 # scrivere il percorso delle cartelle
-<<<<<<< HEAD
 path_t = "..\prova-estrazione-temp\Temperature"
 path_i = "..\dati-regioni"
 
@@ -21,28 +20,28 @@ nome_file = "PROVA_VERA_3date.pkl"
 eps_I0 = 1e-4
 
 # scegliere il numero di timesteps (se lo si vuole diminuire)
-n_timesteps = 200
+n_timesteps = 250
 
 # scegliere il numero di regioni per il training set (il resto è validation set)
 K_train = 10
 
 
 # scegliere se costruire il dataset con temperature e zone
-temps_and_lockdown = False
+temps_and_lockdown = True
 
 # segliere i valori di beta0
-beta0 = np.repeat(2.5, 19)
+beta0 = np.repeat(0, 57)
 Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
-smooth_param = 5
+smooth_param = 10
 
 #######################
 # fine dati dascegliere
 #######################
 
 
-start_vec = ['18/03/2020' , '24/04/2020', '24/05/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec = ['18/03/2020' , '24/09/2020', '24/11/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 
 start = start_vec[0]
 temperature = ext.extract_temperatures(path_t,  n_timesteps, start)
@@ -57,7 +56,7 @@ for start in start_vec[1:]:
 
 infetti[:, 0] = infetti[:, 0] + eps_I0
 S0 = 1 - infetti[:,0]
-beta0 = Rt * alpha / S0;
+# beta0 = Rt * alpha / S0;
 
 
 n_date = len(start_vec)
@@ -81,7 +80,7 @@ def replace_nan_with_previous(arr):
 temperature = replace_nan_with_previous(temperature.copy())
 
 if smooth_param != 0:
-    temps_smooth = np.zeros([19, n_timesteps])
+    temps_smooth = np.zeros([temperature.shape[0], n_timesteps])
     for i in range(n_timesteps):
         mean = temperature[:, i].copy()
         j = 1
