@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import numpy as np
 import glob
@@ -6,12 +7,11 @@ import re
 pd.options.display.max_columns = 21
 
 
-def extract_infects(path, n_timesteps, start):
+def extract_infects(path, n_timesteps, start, n_mesi):
     dir_path = path
     #ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
-    ngiorni = 366
-    
-    
+    ngiorni = 366 * 2
+
     nreg = 21
     all_files = sorted(glob.glob(dir_path + "/*.csv"))
     df = pd.read_csv(all_files[0])
@@ -61,27 +61,38 @@ def extract_infects(path, n_timesteps, start):
         giorno = giorno + 1
     
     dfi = dfi / tot_regione
-    dfi=dfi.reindex(columns=reg_list)
+    dfi = dfi.reindex(columns=reg_list)
     dfi = dfi.drop(columns = ['Molise', "Valle d'Aosta"])
 
-    n_giorni = 365
+    n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
     giorni_prec = 0
     for curr_m in range(m)[1:]:
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
-    giorni_prec = giorni_prec + 1 * (y == 2020)
-    index_start = giorni_prec + d;
+    giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
+    index_start = -54 + giorni_prec + d;
 
-    dfi = dfi.loc[index_start : index_start + n_giorni]
+    dfi = dfi.loc[index_start : index_start + n_giorni - 1]
     
     I_vec = np.array(dfi).transpose()
-    new_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps)
+
+    #aggiunta Rt e beta con derivata logaritmica"
+    alpha = 1.3
+    mylog = np.vectorize(math.log)
+    R0_log = (mylog(I_vec[:,1]) - mylog(I_vec[:,0]))/alpha + 1
+    beta0_log = R0_log * alpha;
 
     # Inizializzazione dell'array di output
-    arr_interp = np.zeros((I_vec.shape[0], n_timesteps))
-    
-    # Interpolazione lineare lungo l'asse N per ogni riga
-    for i in range(I_vec.shape[0]):
-        arr_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
-    return arr_interp
+    if n_timesteps < n_giorni:
+        new_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps)
+        inf_interp = np.zeros((I_vec.shape[0], n_timesteps))
+    #    beta_interp = np.zeros((I_vec.shape[0], n_timesteps))
+
+        # Interpolazione lineare lungo l'asse N per ogni riga
+        for i in range(I_vec.shape[0]):
+            inf_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
+    #        beta_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
+    else:
+        inf_interp = I_vec
+    return inf_interp, beta0_log

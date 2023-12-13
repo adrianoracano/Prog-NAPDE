@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import os
+from estrai_dati import start_vec_val, start_vec_train, n_mesi
+import math
 
 """
 def test_plot(beta0, g, f, save_plot = True, save_path = ''):
@@ -110,7 +112,25 @@ def Dataset_plot(dataset, beta0, g, f, train_or_test, save_plot = True, save_pat
 
 """
 
-
+reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
 def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = ''):
     K = beta_nn.shape[0]
     N = beta_nn.shape[1]
@@ -127,13 +147,18 @@ def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, sa
             ax2.plot(t, I_nn[k, :])
             ax2.plot(t, I[k, :])
             ax2.legend(["infetti rete", "infetti reali"])
-            plt.suptitle(set_type+" n° "+str(k+1))  # Il parametro "y" regola l'altezza del titolo
+            curr_reg = reg_list[k % 19]
+            if set_type == 'train':
+                curr_day = start_vec_train[math.floor(k/19)]
+            elif set_type == 'val':
+                curr_day = start_vec_val[math.floor(k / 19)]
+            plt.suptitle(set_type+" n° "+str(k+1) + ': ' + curr_reg + ' dal ' + curr_day + ', ' + str(n_mesi) + ' mesi')  # Il parametro "y" regola l'altezza del titolo
             if len(save_plots) > 0:
                 print("Saving the plots in " + save_plots + "...\n")
                 path = "./" + save_plots;
                 if not os.path.exists(path):
                     os.mkdir(path)
-                filepath2 = path + "/infettitrain" + str(k + 1) + ".png";
+                filepath2 = path + "/" + set_type + " n°" + str(k + 1) + ".png";
                 plt.savefig(fname=filepath2)
             plt.tight_layout()  # Per evitare sovrapposizioni
             plt.show()

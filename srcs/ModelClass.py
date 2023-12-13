@@ -9,7 +9,7 @@ tf.keras.backend.set_floatx('float64')
 
 class Model:
     def __init__(self, n_input, n_hidden, learning_rate, b_ref, addDropout = False ,\
-                 addBNorm = True, load_path = '', NormalizeInput = False):
+                 addBNorm = True, load_path = '', NormalizeInput = False, use_keras = False):
         self.n_input = n_input
         self.n_hidden = n_hidden
         self.b_ref = b_ref
@@ -20,10 +20,12 @@ class Model:
         else:
             self.weights = {
             'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+            #'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
             'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
             }
             self.biases = {
             'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+            #'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
             'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
             }
             print("Generating new model with standard parameters ...\n")
@@ -35,23 +37,51 @@ class Model:
             
         self.optimizer = tf.optimizers.Adam(learning_rate)
         self.n_iter = 0
+        self.use_keras = use_keras
+        self.keras_model = tfk.Sequential()
+        self.keras_model.add(tfkl.Dense(
+            units=self.n_hidden,
+            input_dim=self.n_input,
+            activation=None,
+            use_bias=True,
+            kernel_initializer="glorot_uniform",
+            bias_initializer="zeros",
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None))
+        self.keras_model.add(tfkl.BatchNormalization())
+        self.keras_model.add(tfkl.Activation('sigmoid'))
+        # model.add(tfkl.Dropout(0.3))
+        self.keras_model.add(tfkl.Dense(1))
+        self.keras_model.add(tfkl.BatchNormalization())
+
     def multilayer_perceptron(self, x):
         layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
         layer_1 = tf.nn.sigmoid(layer_1)
+        #layer_2 = tf.add(tf.matmul(x, self.weights['h2']), self.biases['b2'])
+        #layer_2 = tf.nn.sigmoid(layer_2)
         output = tf.matmul(layer_1, self.weights['out']) + self.biases['out']
         return output
     def g_not_normalized(self, y, v):
         v.shape = (v.shape[0], self.n_input-1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
-        return self.multilayer_perceptron(x)
+        if self.use_keras:
+            return self.keras_model(x)
+        else:
+            return self.multilayer_perceptron(x)
     def g_normalized(self, y, v):
         y = (1.0/self.b_ref)*y
         v = (1.0/self.b_ref)*v
         v.shape = (v.shape[0], self.n_input-1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
-        return self.multilayer_perceptron(x)
+        if self.use_keras:
+            return self.keras_model(x)
+        else:
+            return self.multilayer_perceptron(x)
     def custom_loss(self, dataset, I, t_max, alpha, beta0): 
         summation = []
         K = I.shape[0]
@@ -81,7 +111,10 @@ class Model:
         with tf.GradientTape() as tape:
             loss = self.custom_loss(dataset, I, t_max, alpha, beta0)
         # trainable_variables = self.model.trainable_variables
-        trainable_variables = list(self.weights.values())+list(self.biases.values())
+        if self.use_keras:
+            trainable_variables = self.keras_model.trainable_variables
+        else:
+            trainable_variables = list(self.weights.values())+list(self.biases.values())
         gradients = tape.gradient(loss, trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, trainable_variables))
         self.n_iter = self.n_iter + 1
@@ -89,15 +122,19 @@ class Model:
     def load_model(self, load_path):
         print("Loading model from " + load_path + "...\n")
         # self.model = tfk.models.load_model(load_path)
-        with open(load_path, 'rb') as file:
-            self.weights, self.biases = pickle.load(file)
+        if self.use_keras:
+            self.keras_model = tfk.models.load_model(load_path)
+        else:
+            with open(load_path, 'rb') as file:
+                self.weights, self.biases = pickle.load(file)
     def save_model(self, save_path):
         print("Saving the model in " + save_path + "...\n")
-        # self.model.save(save_path + "iter" + str(self.n_iter))
-        with open(save_path, 'wb') as file:
-            pickle.dump((self.weights, self.biases), file)
-
-    
+        #
+        if self.use_keras:
+            self.keras_model.save(save_path + "iter" + str(self.n_iter))
+        else:
+            with open(save_path, 'wb') as file:
+                pickle.dump((self.weights, self.biases), file)
 
 class NetworkForSIR:
     def __init__(self, model, display_step, t_max, alpha):

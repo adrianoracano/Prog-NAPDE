@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import math
 
-def extract_temperatures(path, n_timesteps, start):
+def extract_temperatures(path, n_timesteps, start, n_mesi):
 
     # Specify the file path
 
@@ -51,24 +52,27 @@ def extract_temperatures(path, n_timesteps, start):
                     print(f"Error: File not found at {file_path}")
                     raise e
 
-    n_giorni = 365
+    n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
     giorni_prec = 0
     for curr_m in range(m)[1:]:
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
-    giorni_prec = giorni_prec + 1 * (y == 2020)
+    giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
     index_start = -54 + giorni_prec + d;
 
     tmedia_val= tmedia_val[:, index_start : index_start + n_giorni]
-    new_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_timesteps)
 
-    # Inizializzazione dell'array di output
-    arr_interp = np.zeros((tmedia_val.shape[0], n_timesteps))
-    
-    # Interpolazione lineare lungo l'asse N per ogni riga
-    for i in range(tmedia_val.shape[0]):
-        arr_interp[i, :] = np.interp(new_indices, np.arange(tmedia_val.shape[1]), tmedia_val[i, :])
+    if n_timesteps < n_giorni:
+        new_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_timesteps)
+
+        # Inizializzazione dell'array di output
+        arr_interp = np.zeros((tmedia_val.shape[0], n_timesteps))
+
+        # Interpolazione lineare lungo l'asse N per ogni riga
+        for i in range(tmedia_val.shape[0]):
+            arr_interp[i, :] = np.interp(new_indices, np.arange(tmedia_val.shape[1]), tmedia_val[i, :])
+    else: arr_interp = tmedia_val
     return arr_interp
 
 
