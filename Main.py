@@ -134,13 +134,16 @@ if len(dataset.shape) == 2:
 else:
     n_input = dataset.shape[2]+1
 
+use_keras = False
+
+addDropout = False
+
 model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
-                   addDropout = False ,addBNorm = True, \
-                   load_path = args.load_model)
+                   addDropout = False ,addBNorm = addDropout, \
+                   load_path = args.load_model,
+                         use_keras = use_keras)
 
 network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
-
-
 
 if args.train:
     loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, \
@@ -153,8 +156,8 @@ if args.test_case:
     b_test_nn, I_test_nn = network.compute_beta_I(test_set, I_test[:, 0], beta0_test)
 
 ########################
-# plot di beta e infetti
-########################
+######################### plot di beta e infetti
+
 
 # se è un test case allora si conoscono anche i beta esatti che quindi vengono 
 # plottati
@@ -168,9 +171,9 @@ if args.plot_test and args.test_case:
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete
 if args.plot_train and  not args.test_case:
-    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1)
+    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1, save_plots = args.save_plots)
 if args.plot_test and not args.test_case:
-    plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1)
+    plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1, save_plots = args.save_plots)
 
 #################
 # plot della loss
@@ -188,6 +191,13 @@ if args.train:
     plt.semilogy(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
     plt.title("loss evolution (semilog scale)")
+    if len(args.save_plots) > 0:
+        print("Saving the loss plot in " + args.save_plots + "...\n")
+        path = "./" + args.save_plots;
+        if not os.path.exists(path):
+            os.mkdir(path)
+        filepath2 = path + "/loss_plot.png";
+        plt.savefig(fname=filepath2)
     plt.show()
     
 

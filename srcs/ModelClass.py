@@ -52,8 +52,22 @@ class Model:
             kernel_constraint=None,
             bias_constraint=None))
         self.keras_model.add(tfkl.BatchNormalization())
+        self.keras_model.add(tfkl.Dense(
+            units=self.n_hidden,
+            input_dim=self.n_input,
+            activation=None,
+            use_bias=True,
+            kernel_initializer="glorot_uniform",
+            bias_initializer="zeros",
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None))
+        self.keras_model.add(tfkl.BatchNormalization())
         self.keras_model.add(tfkl.Activation('sigmoid'))
-        # model.add(tfkl.Dropout(0.3))
+        if addDropout:
+            self.keras_model.add(tfkl.Dropout(0.3))
         self.keras_model.add(tfkl.Dense(1))
         self.keras_model.add(tfkl.BatchNormalization())
 
@@ -143,7 +157,6 @@ class NetworkForSIR:
         self.t_max = t_max
         self.alpha = alpha
     def train(self, dataset, I, val_set, I_val, beta0_train, beta0_val, max_iter, display_weights, validate = True):
-        print('modificato')
         display_step = self.display_step
         print("Starting the training...\n")
         loss_history = np.zeros(int(max_iter / display_step))
