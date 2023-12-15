@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import glob
 import re
+from scipy.interpolate import make_interp_spline
 
 pd.options.display.max_columns = 21
 
@@ -85,14 +86,18 @@ def extract_infects(path, n_timesteps, start, n_mesi):
 
     # Inizializzazione dell'array di output
     if n_timesteps < n_giorni:
-        new_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps)
-        inf_interp = np.zeros((I_vec.shape[0], n_timesteps))
+        new_indices = np.linspace(0, I_vec.shape[1] - 1, math.floor(50 * n_mesi / 365))
+        inf_interp = np.zeros((I_vec.shape[0], math.floor(50 * n_mesi / 365)))
+        inf_spline = np.zeros((I_vec.shape[0], n_timesteps))
     #    beta_interp = np.zeros((I_vec.shape[0], n_timesteps))
 
         # Interpolazione lineare lungo l'asse N per ogni riga
         for i in range(I_vec.shape[0]):
             inf_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
-    #        beta_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
+    #       beta_interp[i, :] = np.interp(new_indices, np.arange(I_vec.shape[1]), I_vec[i, :])
+            spline = make_interp_spline(new_indices, inf_interp[:, i])
+            inf_spline[:, i] = spline(new_indices)
+
     else:
-        inf_interp = I_vec
-    return inf_interp, beta0_log
+        inf_spline = I_vec
+    return inf_spline, beta0_log

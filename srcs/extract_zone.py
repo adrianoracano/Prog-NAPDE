@@ -3,6 +3,8 @@ import numpy as np
 import glob
 import re
 import math
+from scipy.interpolate import make_interp_spline
+
 
 pd.options.display.max_columns = 21
 
@@ -273,12 +275,14 @@ def extract_zones(n_timesteps, start, n_mesi):
     
     Z_vec = np.array(dsz).transpose()
     if n_timesteps < n_giorni:
-        arr_interp = np.zeros((Z_vec.shape[0], n_timesteps))
+        arr_interp = np.zeros((Z_vec.shape[0], math.floor(50 * n_mesi / 365)))
         new_indices = np.linspace(0, Z_vec.shape[1] - 1, n_timesteps)
-
+        zone_spline = np.zeros((Z_vec.shape[0], n_timesteps))
         # Interpolazione lineare lungo l'asse N per ogni riga
         for i in range(Z_vec.shape[0]):
             arr_interp[i, :] = np.interp(new_indices, np.arange(Z_vec.shape[1]), Z_vec[i, :])
-    else: arr_interp = Z_vec
-    return arr_interp
+            spline = make_interp_spline(new_indices, arr_interp[:, i])
+            zone_spline[:, i] = spline(new_indices)
+    else: zone_spline = Z_vec
+    return zone_spline
 

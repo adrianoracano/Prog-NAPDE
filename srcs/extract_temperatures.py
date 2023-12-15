@@ -3,6 +3,8 @@ import numpy as np
 import os
 import re
 import math
+from scipy.interpolate import make_interp_spline
+
 
 def extract_temperatures(path, n_timesteps, start, n_mesi):
 
@@ -68,12 +70,14 @@ def extract_temperatures(path, n_timesteps, start, n_mesi):
 
         # Inizializzazione dell'array di output
         arr_interp = np.zeros((tmedia_val.shape[0], n_timesteps))
-
+        T_spline = np.zeros((tmedia_val.shape[0], n_timesteps))
         # Interpolazione lineare lungo l'asse N per ogni riga
         for i in range(tmedia_val.shape[0]):
             arr_interp[i, :] = np.interp(new_indices, np.arange(tmedia_val.shape[1]), tmedia_val[i, :])
-    else: arr_interp = tmedia_val
-    return arr_interp
+            spline = make_interp_spline(new_indices, arr_interp[:, i])
+            T_spline[:, i] = spline(new_indices)
+    else: T_spline = tmedia_val
+    return T_spline
 
 
 

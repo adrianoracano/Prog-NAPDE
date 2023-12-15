@@ -15,35 +15,35 @@ path_t = "Temperature"
 path_i = "COVID-19/dati-regioni"
 
 # scegliere il nome del file
-nome_file = "NUOVO_DATASET.pkl"
+nome_file = "DATASET_ampio.pkl"
 
 # valore sommato agli infetti iniziali
 eps_I0 = 1e-4
 
 # scegliere il numero di timesteps (se lo si vuole diminuire)
-n_timesteps = math.floor(365 / 3) # non può essere maggiore di questo
+n_timesteps = 400 #ora n_timestep può essere scelto grande a piacere
 
 # scegliere il numero di regioni per il training set (il resto è validation set)
 K_train = 10
 
 
 # scegliere se costruire il dataset con temperature e zone
-temps_and_lockdown = True
+temps_and_lockdown = False
 
 # segliere i valori di beta0
 # beta0 = np.repeat(2.5, 19)
 # Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
-smooth_param = 0
+smooth_param = 0#diventato inutile
 
 #######################
 # fine dati da scegliere
 #######################
 
-start_vec_train = ['24/03/2020' , '24/05/2020', '24/07/2020', '24/09/2020', '24/11/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec_train = ['24/10/2020','24/11/2020', '24/01/2021', '24/02/2021', '24/03/2021', '24/04/2021', '24/06/2021' ]  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 n_date_train = len(start_vec_train)
-n_mesi = 4;
+n_mesi = 6;
 
 start = start_vec_train[0]
 temperature_train = ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)
@@ -61,7 +61,7 @@ infetti_train[:, 0] = infetti_train[:, 0] + eps_I0
 S0_train = 1 - infetti_train[:,0]
 # beta0 = Rt * alpha / S0;
 
-start_vec_val = ['10/02/2021' , '10/04/2021', '10/06/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec_val = ['24/12/2020','10/02/2021', '5/04/2021', '24/05/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 n_date_val = len(start_vec_val)
 
 start = start_vec_val[0]
