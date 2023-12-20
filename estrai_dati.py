@@ -1,5 +1,4 @@
 import math
-
 from srcs import extract_infects as exi
 from srcs import extract_temperatures as ext
 from srcs import extract_zone as exz
@@ -38,7 +37,7 @@ temps_and_lockdown = True
 # Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
-smooth_param = 0#diventato inutile
+smooth_param = 0 #diventato inutile
 
 #######################
 # fine dati da scegliere
@@ -63,8 +62,8 @@ for start in start_vec_train[1:]:
     beta0_train = np.concatenate((beta0_train, beta_new), axis = 0)
     zone_train = np.concatenate((zone_train, exz.extract_zones(n_timesteps, start, n_mesi)), axis = 0)
 
-infetti_train[:, 0] = infetti_train[:, 0] + eps_I0
-rimossi_train[:, 0] = rimossi_train[:, 0] + eps_I0
+infetti_train = infetti_train + eps_I0
+rimossi_train = rimossi_train + eps_I0
 S0_train = 1 - infetti_train[:,0]
 # beta0 = Rt * alpha / S0;
 
