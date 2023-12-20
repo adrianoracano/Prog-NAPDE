@@ -7,7 +7,6 @@ from srcs import extract_removed as exr
 import numpy as np
 import pickle
 
-
 ###################
 # dati da scegliere
 ###################
@@ -87,8 +86,8 @@ for start in start_vec_val[1:]:
     beta0_val = np.concatenate((beta0_val, beta_new), axis = 0)
     zone_val = np.concatenate((zone_val, exz.extract_zones(n_timesteps, start, n_mesi)), axis = 0)
 
-infetti_val[:, 0] = infetti_val[:, 0] + eps_I0
-rimossi_val[:, 0] = rimossi_val[:, 0] + eps_I0
+infetti_val = infetti_val + eps_I0
+rimossi_val = rimossi_val + eps_I0
 S0_val = 1 - infetti_val[:,0]
 
 # n_date = len(start_vec)
