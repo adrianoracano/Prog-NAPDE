@@ -7,7 +7,6 @@ from scipy.interpolate import make_interp_spline
 
 pd.options.display.max_columns = 21
 
-
 def extract_infects(path, n_timesteps, start, n_mesi):
     dir_path = path
     # ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
@@ -78,10 +77,11 @@ def extract_infects(path, n_timesteps, start, n_mesi):
     I_vec = np.array(dfi).transpose()
 
     # Inizializzazione dell'array di output
-    new_indices = np.linspace(0, I_vec.shape[1] - 1, math.floor(50 * n_mesi / 12))
-    inf_interp = np.zeros(shape=(I_vec.shape[0], math.floor(50 * n_mesi / 12)))
-    spline_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps)
-    inf_spline = np.zeros(shape=(I_vec.shape[0], n_timesteps))
+    n_interp_point = max(10,math.floor(50 * n_mesi / 12))
+    new_indices = np.linspace(0, I_vec.shape[1] - 1, n_interp_point)
+    inf_interp = np.zeros(shape=(I_vec.shape[0], n_interp_point))
+    spline_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps + 1)
+    inf_spline = np.zeros(shape=(I_vec.shape[0], n_timesteps + 1))
 
     # Interpolazione lineare lungo l'asse N per ogni riga
     for i in range(I_vec.shape[0]):
@@ -90,10 +90,13 @@ def extract_infects(path, n_timesteps, start, n_mesi):
         spline = make_interp_spline(new_indices, inf_interp[i, :])
         inf_spline[i, :] = spline(spline_indices)
 
+    eps = 10 ** (-6)
+    inf_spline = inf_spline + eps
     # aggiunta Rt e beta con derivata logaritmica"
     alpha = 1.3
     mylog = np.vectorize(math.log)
     dt = n_mesi * 30 / n_timesteps
-    R0_log = (mylog(inf_spline[:, 1]) - mylog(inf_spline[:, 0])) / (dt * alpha) + 1
-    beta0_log = R0_log * alpha;
-    return inf_spline, beta0_log
+    beta_log = np.zeros(shape = (inf_spline.shape[0], inf_spline.shape[1] -1))
+    for i in range(inf_spline.shape[1] - 1):
+        beta_log[:,i] = np.divide(inf_spline[:, i + 1] - inf_spline[:, i] , dt * inf_spline[:, i]) + alpha
+    return inf_spline[:, 0 : -1], beta_log
