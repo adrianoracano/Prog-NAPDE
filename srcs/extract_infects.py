@@ -95,8 +95,8 @@ def extract_infects(path, n_timesteps, start, n_mesi):
     # aggiunta Rt e beta con derivata logaritmica"
     alpha = 1.3
     mylog = np.vectorize(math.log)
-    dt = n_mesi * 30 / n_timesteps
+    dt = 1.0 / n_timesteps
     beta_log = np.zeros(shape = (inf_spline.shape[0], inf_spline.shape[1] -1))
     for i in range(inf_spline.shape[1] - 1):
-        beta_log[:,i] = np.divide(inf_spline[:, i + 1] - inf_spline[:, i] , dt * inf_spline[:, i]) + alpha
+        beta_log[:,i] = np.divide(inf_spline[:, i + 1] - inf_spline[:, i] , n_mesi*dt * inf_spline[:, i]) + alpha
     return inf_spline[:, 0 : -1], beta_log
