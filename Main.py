@@ -160,7 +160,7 @@ if args.test_case:
 # plottati
 if args.plot_train and args.test_case:
     plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
-                           "train", 5)
+                           "train", 2)
 if args.plot_test and args.test_case:
     plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
                            "test", 1)

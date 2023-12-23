@@ -16,21 +16,22 @@ path_i = "..\dati-regioni"
 
 
 # scegliere il nome del file
-nome_file = "NUOVO_DATASET.pkl"
+nome_file = "NUOVO_DATASET_SOLO_TEMP.pkl"
 
 # valore sommato agli infetti iniziali
 eps_I0 = 1e-4
 
 # scegliere il numero di timesteps (se lo si vuole diminuire)
 
-n_timesteps = math.floor(365 / 3) # non può essere maggiore di questo
+# n_timesteps = math.floor(365 / 3) # non può essere maggiore di questo
+n_timesteps = 150
 
 # scegliere il numero di regioni per il training set (il resto è validation set)
 K_train = 10
 
 
 # scegliere se costruire il dataset con temperature e zone
-temps_and_lockdown = True
+temps_and_lockdown = False
 
 # segliere i valori di beta0
 
@@ -38,18 +39,17 @@ temps_and_lockdown = True
 # Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
-smooth_param = 10
+smooth_param = 5
 
 #######################
 # fine dati da scegliere
 #######################
 
-<<<<<<< HEAD
 
 
-start_vec_train = ['24/03/2020' , '24/05/2020', '24/07/2020', '24/09/2020', '24/11/2020']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec_train = ['15/10/2020' , '15/12/2020', '15/02/2021', '15/04/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 n_date_train = len(start_vec_train)
-n_mesi = 4;
+n_mesi = 6;
 
 start = start_vec_train[0]
 temperature_train = ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)
@@ -68,7 +68,7 @@ infetti_train[:, 0] = infetti_train[:, 0] + eps_I0
 S0_train = 1 - infetti_train[:,0]
 # beta0 = Rt * alpha / S0;
 
-start_vec_val = ['10/02/2021' , '10/04/2021', '10/06/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+start_vec_val = ['15/11/2020' , '15/01/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
 n_date_val = len(start_vec_val)
 
 start = start_vec_val[0]
@@ -104,8 +104,29 @@ def replace_nan_with_previous(arr):
             arr[row, col] = arr[row, col - 1]
     return arr
 
+def replace_nan(array):
+    # Copia dell'array originale per evitare modifiche dirette
+    arr = array.copy()
+
+    # Ciclo sulle righe dell'array
+    for i in range(arr.shape[0]):
+        # Ciclo sulle colonne dell'array
+        for j in range(arr.shape[1]):
+            # Se trova un NaN
+            if np.isnan(arr[i, j]):
+                # Cerca il primo valore non-NaN nella stessa riga (i) e dopo la colonna j
+                non_nan_idx = np.where(~np.isnan(arr[i, j+1:]))[0]
+                if non_nan_idx.size > 0:
+                    # Trova la prima posizione non-NaN nella riga i dopo j
+                    first_non_nan_idx = non_nan_idx[0] + j + 1
+                    # Rimpiazza NaN con il primo valore non-NaN trovato nella stessa riga e dopo la colonna j
+                    arr[i, j] = arr[i, first_non_nan_idx]
+    return arr
+
 temperature_train = replace_nan_with_previous(temperature_train.copy())
 temperature_val = replace_nan_with_previous(temperature_val.copy())
+temperature_train = replace_nan(temperature_train)
+temperature_val = replace_nan(temperature_val)
 
 
 if smooth_param != 0:
