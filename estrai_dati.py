@@ -1,8 +1,8 @@
 import math
-
 from srcs import extract_infects as exi
 from srcs import extract_temperatures as ext
 from srcs import extract_zone as exz
+from srcs import extract_removed as exr
 import numpy as np
 import pickle
 
@@ -18,17 +18,20 @@ path_i = "..\dati-regioni"
 # scegliere il nome del file
 nome_file = "NUOVO_DATASET_SOLO_TEMP.pkl"
 
+
 # valore sommato agli infetti iniziali
 eps_I0 = 1e-4
 
+#alpha come parametro
+learn_alpha = True
+
 # scegliere il numero di timesteps (se lo si vuole diminuire)
 
-# n_timesteps = math.floor(365 / 3) # non può essere maggiore di questo
 n_timesteps = 150
+
 
 # scegliere il numero di regioni per il training set (il resto è validation set)
 K_train = 10
-
 
 # scegliere se costruire il dataset con temperature e zone
 temps_and_lockdown = False
@@ -39,15 +42,15 @@ temps_and_lockdown = False
 # Rt = [3.14 , 2.99, 3.31, 2.32, 1.96, 2.39 ]
 # per rendere le temperature regolari. 0 vuol dire che le temperature
 # non vengono cambiate
-smooth_param = 5
+
+smooth_param = 0 #diventato inutile
 
 #######################
 # fine dati da scegliere
 #######################
 
-
-
 start_vec_train = ['15/10/2020' , '15/12/2020', '15/02/2021', '15/04/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+
 n_date_train = len(start_vec_train)
 n_mesi = 6;
 
@@ -55,9 +58,12 @@ start = start_vec_train[0]
 temperature_train = ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)
 infetti_train, beta0_train = exi.extract_infects(path_i, n_timesteps, start, n_mesi)
 zone_train = exz.extract_zones(n_timesteps, start, n_mesi)
+rimossi_train = exr.extract_removed(path_i, n_timesteps, start, n_mesi)
 
 for start in start_vec_train[1:]:
     temperature_train = np.concatenate((temperature_train, ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)), axis = 0)
+    rimossi_train = np.concatenate(
+        (rimossi_train, exr.extract_removed(path_i, n_timesteps, start, n_mesi)), axis=0)
     infetti_new, beta_new = exi.extract_infects(path_i, n_timesteps, start, n_mesi)
     infetti_train = np.concatenate((infetti_train, infetti_new), axis = 0)
     beta0_train = np.concatenate((beta0_train, beta_new), axis = 0)
@@ -69,28 +75,37 @@ S0_train = 1 - infetti_train[:,0]
 # beta0 = Rt * alpha / S0;
 
 start_vec_val = ['15/11/2020' , '15/01/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+
+S0_train = 1 - infetti_train[:,0]
+# beta0 = Rt * alpha / S0;
+
+start_vec_val = ['24/12/2020','10/02/2021', '5/04/2021', '24/05/2021']  # le date devono essere stringhe nella forma 'dd/mm/yyyy', successive al 24 feb 2020 e precedenti il 31 dic 2020
+
 n_date_val = len(start_vec_val)
 
 start = start_vec_val[0]
 temperature_val = ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)
 infetti_val, beta0_val = exi.extract_infects(path_i, n_timesteps, start, n_mesi)
 zone_val = exz.extract_zones(n_timesteps, start, n_mesi)
+rimossi_val = exr.extract_removed(path_i, n_timesteps, start, n_mesi)
 
 for start in start_vec_val[1:]:
     temperature_val = np.concatenate((temperature_val, ext.extract_temperatures(path_t,  n_timesteps, start, n_mesi)), axis = 0)
+    rimossi_val = np.concatenate(
+        (rimossi_val, exr.extract_removed(path_i, n_timesteps, start, n_mesi)), axis=0)
     infetti_new, beta_new = exi.extract_infects(path_i, n_timesteps, start, n_mesi)
     infetti_val = np.concatenate((infetti_val, infetti_new), axis = 0)
     beta0_val = np.concatenate((beta0_val, beta_new), axis = 0)
     zone_val = np.concatenate((zone_val, exz.extract_zones(n_timesteps, start, n_mesi)), axis = 0)
 
-infetti_val[:, 0] = infetti_val[:, 0] + eps_I0
+infetti_val = infetti_val + eps_I0
+rimossi_val = rimossi_val + eps_I0
 S0_val = 1 - infetti_val[:,0]
-
 
 # n_date = len(start_vec)
 # K_train = K_train * n_date;
 
-def replace_nan_with_previous(arr):
+def replace_nan_with_previous(arr):#può essere anche tolto, dato che è in extract_temp
     # Trova le posizioni dei valori 'nan'
     nan_positions = np.isnan(arr)
 
@@ -128,7 +143,6 @@ temperature_val = replace_nan_with_previous(temperature_val.copy())
 temperature_train = replace_nan(temperature_train)
 temperature_val = replace_nan(temperature_val)
 
-
 if smooth_param != 0:
 
     temps_smooth_train = np.zeros([19 * n_date_train, n_timesteps])
@@ -151,7 +165,6 @@ if smooth_param != 0:
             j =j+1
         temps_smooth_train[:, i] = (1.0/n_sum)* mean_train
         temps_smooth_val[:, i] = (1.0 / n_sum) * mean_val
-    
     temperature_train = temps_smooth_train
     temperature_val = temps_smooth_val
 
@@ -177,6 +190,10 @@ if temps_and_lockdown:
     val_set[:, :, 0] = temperature_val
     val_set[:, :, 1] = zone_val
 
+if learn_alpha:
+    with open('datasets/' + nome_file, 'wb') as file:
+        pickle.dump((infetti_train, infetti_val, rimossi_train, rimossi_val, train_set, val_set, beta0_train, beta0_val), file)
+else:
+    with open('datasets/'+nome_file, 'wb') as file:
+        pickle.dump((infetti_train, infetti_val, train_set, val_set, beta0_train, beta0_val), file)
 
-with open('datasets/'+nome_file, 'wb') as file:
-    pickle.dump((infetti_train, infetti_val, train_set, val_set, beta0_train, beta0_val), file)

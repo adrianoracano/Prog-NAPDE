@@ -3,6 +3,8 @@ import numpy as np
 import os
 import re
 import math
+from scipy.interpolate import make_interp_spline
+
 
 def extract_temperatures(path, n_timesteps, start, n_mesi):
 
@@ -63,17 +65,34 @@ def extract_temperatures(path, n_timesteps, start, n_mesi):
 
     tmedia_val= tmedia_val[:, index_start : index_start + n_giorni]
 
-    if n_timesteps < n_giorni:
-        new_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_timesteps)
+    def replace_nan_with_previous(arr):
+        # Trova le posizioni dei valori 'nan'
+        nan_positions = np.isnan(arr)
 
-        # Inizializzazione dell'array di output
-        arr_interp = np.zeros((tmedia_val.shape[0], n_timesteps))
+        # Trova gli indici dei valori 'nan'
+        nan_indices = np.argwhere(nan_positions)
 
-        # Interpolazione lineare lungo l'asse N per ogni riga
-        for i in range(tmedia_val.shape[0]):
-            arr_interp[i, :] = np.interp(new_indices, np.arange(tmedia_val.shape[1]), tmedia_val[i, :])
-    else: arr_interp = tmedia_val
-    return arr_interp
+        # Sostituisci i valori 'nan' con i valori precedenti lungo l'asse delle colonne
+        for idx in nan_indices:
+            row, col = idx
+            if col != 0:  # Controlla se non è la prima colonna
+                arr[row, col] = arr[row, col - 1]
+        return arr
+
+    tmedia_val = replace_nan_with_previous(tmedia_val)
+
+    new_indices = np.linspace(0, tmedia_val.shape[1] - 1, math.floor(50 * n_mesi / 12))
+
+    # Inizializzazione dell'array di output
+    arr_interp = np.zeros((tmedia_val.shape[0], math.floor(50 * n_mesi / 12)))
+    spline_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_timesteps)
+    T_spline = np.zeros((tmedia_val.shape[0], n_timesteps))
+    # Interpolazione lineare lungo l'asse N per ogni riga
+    for i in range(tmedia_val.shape[0]):
+        arr_interp[i, :] = np.interp(new_indices, np.arange(tmedia_val.shape[1]), tmedia_val[i, :])
+        spline = make_interp_spline(new_indices, arr_interp[i, :])
+        T_spline[i, :] = spline(spline_indices)
+    return T_spline
 
 
 

@@ -81,6 +81,8 @@ tau = float(data_dict['tau'])
 
 b_ref = alpha * math.log(S0/S_inf) / (1.0 - S_inf)
 
+#rimossi nella loss
+loss_R = True
 
 ###########################
 # viene caricato il dataset
@@ -93,8 +95,10 @@ try:
         else: 
             # Se si vogliono utilizzare dati reali vengono caricati gli infetti
             # e dati vari, come le temperature e i valori di beta0
-            I_train, I_val, dataset, val_set, beta0_train,beta0_val = pickle.load(file)
-            
+            if not loss_R:
+                I_train, I_val, dataset, val_set, beta0_train, beta0_val = pickle.load(file)
+            else:# bisogna caricare dataset con rimossi
+                I_train, I_val, R_train, R_val, dataset, val_set, beta0_train, beta0_val = pickle.load(file)
     print('dataset', dataset_name, 'loaded...\n')
 except FileNotFoundError:
     print('file',dataset_name,'not found...\n')
@@ -134,27 +138,39 @@ if len(dataset.shape) == 2:
 else:
     n_input = dataset.shape[2]+1
 
+use_keras = False
+addDropout = False
+
 model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
-                   addDropout = False ,addBNorm = True, \
-                   load_path = args.load_model)
+                   addDropout = False ,addBNorm = addDropout, \
+                   load_path = args.load_model,
+                         use_keras = use_keras,
+                         loss_R = loss_R)
 
 network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
-
-
 if args.train:
-    loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, \
+    loss_train, loss_val, it = network.train(dataset, I_train, R_train, val_set, I_val, R_val, \
                                              beta0_train, beta0_val, \
                                              training_steps, display_weights, validate = True)
 
-b_train_nn, I_train_nn = network.compute_beta_I(dataset, I_train[:, 0], beta0_train)
-b_val_nn, I_val_nn = network.compute_beta_I(val_set, I_val[:, 0], beta0_val)
-if args.test_case:
-    b_test_nn, I_test_nn = network.compute_beta_I(test_set, I_test[:, 0], beta0_test)
+
+if len(args.save_model)>0:
+    model.save_model(args.save_model)
+
+if not loss_R:
+    b_train_nn, I_train_nn = network.compute_beta_I(dataset, I_train[:, 0], beta0_train)
+    b_val_nn, I_val_nn = network.compute_beta_I(val_set, I_val[:, 0], beta0_val)
+    if args.test_case:
+        b_test_nn, I_test_nn = network.compute_beta_I(test_set, I_test[:, 0], beta0_test)
+else:
+    b_train_nn, I_train_nn, R_train_nn = network.compute_beta_I_R(dataset, I_train[:, 0], R_train[:,0], beta0_train)
+    b_val_nn, I_val_nn, R_val_nn = network.compute_beta_I_R(val_set, I_val[:, 0], R_val[:,0], beta0_val)
+
 
 ########################
-# plot di beta e infetti
-########################
+######################### plot di beta e infetti
+
 
 # se è un test case allora si conoscono anche i beta esatti che quindi vengono 
 # plottati
@@ -167,17 +183,21 @@ if args.plot_test and args.test_case:
 # se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete
-if args.plot_train and  not args.test_case:
-    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1)
-if args.plot_test and not args.test_case:
-    plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1)
+if loss_R:
+    if args.plot_train and  not args.test_case:
+        plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, R_train_nn, R_train, set_type='train', plot_display = 1, save_plots = args.save_plots)
+    if args.plot_test and not args.test_case:
+        plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, R_val_nn, R_val, set_type='val', plot_display = 1, save_plots = args.save_plots)
+else:
+    if args.plot_train and  not args.test_case:
+        plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1, save_plots = args.save_plots)
+    if args.plot_test and not args.test_case:
+        plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1, save_plots = args.save_plots)
 
 #################
 # plot della loss
 #################
 
-if len(args.save_model)>0:
-    model.save_model(args.save_model)
 if args.train:
     plt.plot(display_step*np.arange(0, it), loss_train[0:it])
     plt.plot(display_step*np.arange(0, it), loss_val[0:it])
@@ -188,6 +208,13 @@ if args.train:
     plt.semilogy(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
     plt.title("loss evolution (semilog scale)")
+    if len(args.save_plots) > 0:
+        print("Saving the loss plot in " + args.save_plots + "...\n")
+        path = "./" + args.save_plots;
+        if not os.path.exists(path):
+            os.mkdir(path)
+        filepath2 = path + "/loss_plot.png";
+        plt.savefig(fname=filepath2)
     plt.show()
     
 
