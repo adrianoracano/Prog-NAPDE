@@ -101,7 +101,7 @@ class Model:
             return self.keras_model(x)
         else:
             return self.multilayer_perceptron(x)
-    def custom_loss(self, dataset, I, R, t_max, alpha, beta0):
+    def custom_loss(self, dataset, I, t_max, alpha, beta0):
         summation = []
         K = I.shape[0]
         N = I.shape[1]
@@ -160,9 +160,9 @@ class Model:
             curr_R_nn = next_R_nn
         return tf.reduce_sum(summation)
 
-    def train_step(self, dataset, I, R, t_max, alpha, beta0):
+    def train_step(self, dataset, I, t_max, alpha, beta0):
         with tf.GradientTape() as tape:
-            loss = self.loss(dataset, I, R, t_max, alpha, beta0)
+            loss = self.loss(dataset, I, t_max, alpha, beta0)
         # trainable_variables = self.model.trainable_variables
         if self.use_keras:
             trainable_variables = self.keras_model.trainable_variables
@@ -195,7 +195,7 @@ class NetworkForSIR:
         self.display_step = display_step
         self.t_max = t_max
         self.alpha = alpha
-    def train(self, dataset, I, R, val_set, I_val, R_val, beta0_train, beta0_val, max_iter, display_weights, validate = True):
+    def train(self, dataset, I,val_set, I_val, beta0_train, beta0_val, max_iter, display_weights, validate = True):
         display_step = self.display_step
         print("Starting the training...\n")
         loss_history = np.zeros(int(max_iter / display_step))
@@ -204,14 +204,14 @@ class NetworkForSIR:
         loss_history_val = np.zeros(int(max_iter / display_step))
         try:
             for i in range(max_iter):
-                self.model.train_step(dataset, I, R,  self.t_max, self.alpha, beta0_train)
+                self.model.train_step(dataset, I, self.t_max, self.alpha, beta0_train)
                 if i % display_step == 0:
                     print("iterazione %i:" % i)
-                    loss_history[i_history] = self.model.loss(dataset, I, R,\
+                    loss_history[i_history] = self.model.loss(dataset, I,\
                                                                      self.t_max, self.alpha, beta0_train)
                     print("loss on training set: %f " % loss_history[i_history])
                     if validate:
-                        loss_history_val[i_history] = self.model.loss(val_set, I_val, R_val,\
+                        loss_history_val[i_history] = self.model.loss(val_set, I_val,\
                                                                          self.t_max, self.alpha, beta0_val)
                         print("loss on validation set: %f" % loss_history_val[i_history])
                     i_history = i_history + 1

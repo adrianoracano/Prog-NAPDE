@@ -39,12 +39,17 @@ beta0_inf = float(data_dict['beta0_inf'])
 beta0_sup = float(data_dict['beta0_sup'])
 t_max = float(data_dict['t_max'])
 alpha = float(data_dict['alpha'])
+n_variabili = int(data_dict['n_variabili'])
 
 b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
 t = np.linspace(0, 1, N)
 
+if n_variabili > 1:
+    dataset = np.zeros([K, N, n_variabili])
+else:
+    dataset = np.zeros([K, N])
 
-dataset = np.zeros([K, N, 2])
+
 beta0_train = np.random.uniform(beta0_inf, beta0_sup, (K))
 for k in range(K):
     if train_fun_type == 'adriano-style':
@@ -53,14 +58,20 @@ for k in range(K):
         T_new = tg.generate_temperature(val_fun_type)
     
     lockdown_function = tg.generate_lockdown_function()
-    
-    for i in range(N):
-        dataset[k, i, 0] = T_new(t[i])
-        dataset[k, i, 1] = lockdown_function(t[i])
+    if n_variabili > 1:
+        for i in range(N):
+            dataset[k, i, 0] = T_new(t[i])
+            dataset[k, i, 1] = lockdown_function(t[i])
+    else:
+        for i in range(N):
+            dataset[k, i] = T_new(t[i])
     del T_new, lockdown_function
 
 beta0_val = np.random.uniform(beta0_inf, beta0_sup, (K_val))
-val_set = np.zeros([K_val, N, 2])
+if n_variabili > 1:
+    val_set = np.zeros([K_val, N, 2])
+else:
+    val_set = np.zeros([K_val, N])
 for k in range(K_val):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
@@ -68,15 +79,22 @@ for k in range(K_val):
         T_new = tg.generate_temperature(val_fun_type)
     
     lockdown_function = tg.generate_lockdown_function()
-    
-    for i in range(N):
-        val_set[k, i, 0] = T_new(t[i])
-        val_set[k, i, 1] = lockdown_function(t[i])
+    if n_variabili > 1:
+        for i in range(N):
+            val_set[k, i, 0] = T_new(t[i])
+            val_set[k, i, 1] = lockdown_function(t[i])
+    else:
+        for i in range(N):
+            val_set[k, i] = T_new(t[i])
     del T_new, lockdown_function
 
 
 beta0_test = np.random.uniform(beta0_inf, beta0_sup, (K_test))
-test_set = np.zeros([K_test, N, 2])
+if n_variabili > 1:
+    test_set = np.zeros([K_test, N, 2])
+else:
+    test_set = np.zeros([K_test, N])
+
 for k in range(K_test):
     if train_fun_type == 'adriano-style':
         T_new, Betaeqnew = tg.generate_temp_by_adri(b_ref)
@@ -85,10 +103,13 @@ for k in range(K_test):
     
     lockdown_function = tg.generate_lockdown_function()
 
-    
-    for i in range(N):
-        test_set[k, i, 0] = T_new(t[i])
-        test_set[k, i, 1] = lockdown_function(t[i])
+    if n_variabili > 1:
+        for i in range(N):
+            test_set[k, i, 0] = T_new(t[i])
+            test_set[k, i, 1] = lockdown_function(t[i])
+    else:
+        for i in range(N):
+            test_set[k, i] = T_new(t[i])
     del T_new
 
 with open('datasets/'+nome_file, 'wb') as file:
