@@ -74,7 +74,7 @@ def compute_I(betas, t_max, alpha, sir_0):
 def compute_beta(datasets, beta0s, t_max, tau, b_ref):
     if len(datasets[0].shape) == 2:
         def f(b, T):
-            return (1.0/tau)*(2*b_ref - T - b)/(1 + b**2 )
+            return (1.0/tau)*(2*b_ref - T - b)
         real_beta = []
         J = len(datasets)
         for j in range(J):
