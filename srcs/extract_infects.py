@@ -7,7 +7,27 @@ from scipy.interpolate import make_interp_spline
 
 pd.options.display.max_columns = 21
 
-def extract_infects(path, n_timesteps, start, n_mesi):
+reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
+
+def extract_infects(path, n_timesteps, start, n_mesi, regions = reg_list):
     dir_path = path
     # ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
     ngiorni = 366 * 2
@@ -61,7 +81,11 @@ def extract_infects(path, n_timesteps, start, n_mesi):
 
     dfi = dfi / tot_regione
     dfi = dfi.reindex(columns=reg_list)
-    dfi = dfi.drop(columns=['Molise', "Valle d'Aosta"])
+    #dfi = dfi.drop(columns=['Molise', "Valle d'Aosta"])
+
+    for region in reg_list:
+        if not region in regions:
+            dfi = dfi.drop(columns=[region])
 
     n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
@@ -70,14 +94,15 @@ def extract_infects(path, n_timesteps, start, n_mesi):
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
     giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
-    index_start = -54 + giorni_prec + d;
+    index_start = -54 + giorni_prec + d
 
     dfi = dfi.loc[index_start: index_start + n_giorni - 1]
 
     I_vec = np.array(dfi).transpose()
 
     # Inizializzazione dell'array di output
-    n_interp_point = max(10,math.floor(50 * n_mesi / 12))
+    K = 1 / 3.6 #percentuale dei timestep usati per interpolare gli infetti, già qui viene fatto uno smoothing
+    n_interp_point = max(10,math.floor(n_giorni * K)) #numero punti in cui interpolare gli infetti, circa 
     new_indices = np.linspace(0, I_vec.shape[1] - 1, n_interp_point)
     inf_interp = np.zeros(shape=(I_vec.shape[0], n_interp_point))
     spline_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps + 1)
@@ -94,7 +119,6 @@ def extract_infects(path, n_timesteps, start, n_mesi):
     inf_spline = inf_spline + eps
     # aggiunta Rt e beta con derivata logaritmica"
     alpha = 1.3
-    mylog = np.vectorize(math.log)
     dt = 1.0 / n_timesteps
     beta_log = np.zeros(shape = (inf_spline.shape[0], inf_spline.shape[1] -1))
     for i in range(inf_spline.shape[1] - 1):

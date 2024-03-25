@@ -10,7 +10,6 @@ def ngiorni_a_data(n_days):
     while sum + giorni_per_mese[curr_m] < n_days:
         sum += giorni_per_mese[curr_m]
         curr_m += 1
-        print(sum)
         if curr_m >= 12:
             curr_m = curr_m % 12
             n_anni += 1

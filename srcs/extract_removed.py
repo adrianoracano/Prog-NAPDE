@@ -7,8 +7,47 @@ from scipy.interpolate import make_interp_spline
 
 pd.options.display.max_columns = 21
 
+reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
 
-def extract_removed(path, n_timesteps, start, n_mesi):
+def extract_removed(path, n_timesteps, start, n_mesi, regions = reg_list):
+    reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
+
     dir_path = path
     # ngiorni = len([entry for entry in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, entry))])
     ngiorni = 366 * 2
@@ -67,7 +106,13 @@ def extract_removed(path, n_timesteps, start, n_mesi):
     dfr = dfr + dfm
     dfr = dfr / tot_regione
     dfr = dfr.reindex(columns=reg_list)
-    dfr = dfr.drop(columns=['Molise', "Valle d'Aosta"])
+    #dfr = dfr.drop(columns=['Molise', "Valle d'Aosta"])
+
+    regions_to_exclude = []
+    for region in reg_list:
+        if not region in regions:
+            dfr = dfr.drop(columns = [region])
+
 
     n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
@@ -83,8 +128,9 @@ def extract_removed(path, n_timesteps, start, n_mesi):
     R_vec = np.array(dfr).transpose()
 
     # Inizializzazione dell'array di output
-    new_indices = np.linspace(0, R_vec.shape[1] - 1, math.floor(50 * n_mesi / 12))
-    rem_interp = np.zeros(shape=(R_vec.shape[0], math.floor(50 * n_mesi / 12)))
+    n_interp_point = max(10,math.floor(50 * n_mesi / 12))
+    new_indices = np.linspace(0, R_vec.shape[1] - 1, n_interp_point)
+    rem_interp = np.zeros(shape=(R_vec.shape[0], max(10,math.floor(50 * n_mesi / 12))))
     spline_indices = np.linspace(0, R_vec.shape[1] - 1, n_timesteps)
     rem_spline = np.zeros(shape=(R_vec.shape[0], n_timesteps))
 
