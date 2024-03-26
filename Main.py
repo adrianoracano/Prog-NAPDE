@@ -47,6 +47,7 @@ parser.add_argument('-o', '--overwrite', help='save and load the weights from th
 parser.add_argument('-sp', '--save-plots', help='save the plots in the specified file after the training', default='')
 parser.add_argument('-sm', '--save-model', help='save the model file in the specified directory after the training', default='')
 parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
+parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='stoe_true', default = False)
 
 
 args = parser.parse_args()
@@ -91,7 +92,10 @@ try:
     with open(path_dataset, 'rb') as file:
         if args.test_case:
             dataset,val_set,test_set,beta0_train,beta0_val,beta0_test = pickle.load(file)  # viene caricato il  dataset
-        else: 
+        elif args.beta_log: 
+            # vengono presi gli infetti (ricostruiti col beta-log), il beta-log e le temperature (+ zone, ...)
+            I_train, I_val, dataset, val_set, beta_train, beta_val = pickle.load(file)
+        else:
             # Se si vogliono utilizzare dati reali vengono caricati gli infetti
             # e dati vari, come le temperature e i valori di beta0
             I_train, I_val, dataset, val_set, beta0_train, beta0_val = pickle.load(file)
@@ -144,6 +148,12 @@ model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
 
 network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
+# se si utilizza il test-case beta-log vengono presi da beta_train, beta_val i
+# valori iniziali beta0_train, beta0_val
+if args.beta_log:
+    beta0_train = beta_train[:, 0]
+    beta0_val = beta_val[:, 0]
+
 if args.train:
     loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, \
                                              beta0_train, beta0_val, \
@@ -166,19 +176,22 @@ if args.test_case:
 
 # se è un test case allora si conoscono anche i beta esatti che quindi vengono 
 # plottati
-if args.plot_train and args.test_case:
+
+got_beta_for_plot = args.test_case or args.beta_log
+
+if args.plot_train and got_beta_for_plot:
     plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
                            "train", 2)
-if args.plot_test and args.test_case:
+if args.plot_test and got_beta_for_plot:
     plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
                            "test", 1)
 # se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete
 
-if args.plot_train and not args.test_case:
+if args.plot_train and not got_beta_for_plot:
     plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1, save_plots = args.save_plots)
-if args.plot_test and not args.test_case:
+if args.plot_test and not got_beta_for_plot:
     plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1, save_plots = args.save_plots)
 
 #################
