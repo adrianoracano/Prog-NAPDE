@@ -27,15 +27,10 @@ reg_list = ['Abruzzo',
      'P.A. Trento']
 
 #funzione per generare dataset infetti ===========================
-#non si può scegliere all'inizio il numero di intervalli da usare, 
-#ma bisogna mettere la lungehzza di un intervallo in giorni, la 
-#lunghezza in giorni dell' overlap e il massimo periodo in mesi
-#(anche decimale). Il numero di intervalli generato viene stampato 
-#all'inizio. 
 
-#path_i = lo stesso di estract_infects
+#path_i = lo stesso di extract_infects
+#K = numero di sample da generare, se sono troppi dà errore
 #n_giorni = lunghezza di un intervallo in giorni
-#max_month = il massimo periodo in mesi da cui prendere intervalli(anche decimale)
 #overlap = overlap tra i periodi
 #start_date = data di inizio
 #n_timesteps = timesteps di un intervallo (facoltativo)
