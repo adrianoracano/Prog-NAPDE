@@ -1,15 +1,10 @@
-import pickle
 from srcs import extract_infects as exi
 from srcs import extract_removed as exr
 import math
-import re
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy.interpolate import make_interp_spline
 from utilities import SirHelperFunctions as shr
-import os
 import converti_ngiorni_data as cgd
-import random
 
 reg_list = ['Abruzzo',
      'Basilicata',
