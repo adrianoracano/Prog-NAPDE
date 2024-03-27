@@ -47,7 +47,7 @@ parser.add_argument('-o', '--overwrite', help='save and load the weights from th
 parser.add_argument('-sp', '--save-plots', help='save the plots in the specified file after the training', default='')
 parser.add_argument('-sm', '--save-model', help='save the model file in the specified directory after the training', default='')
 parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
-parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='stoe_true', default = False)
+parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='store_true', default = False)
 
 
 args = parser.parse_args()
@@ -181,7 +181,8 @@ got_beta_for_plot = args.test_case or args.beta_log
 
 if args.plot_train and got_beta_for_plot:
     plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
-                           "train", 2)
+                           "train", 1)
+    
 if args.plot_test and got_beta_for_plot:
     plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
                            "test", 1)
