@@ -4,11 +4,18 @@ import math
 import re
 import converti_ngiorni_data as cgd
 
-reg_list = ['Milano']
+reg_list = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
+                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
+                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
 
-def generate_temp_arrays(path_t, n_giorni, max_months, overlap, start_date  = '15/03/2020', n_timesteps = None, region = reg_list):
+def generate_temp_arrays(path_t, K, n_giorni, overlap, start_date  = '15/03/2020', n_timesteps = None, regions = reg_list):
     n_mesi = n_giorni / 30
-    
+
+    reg_list = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
+                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
+                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
+
+    """
     start = cgd.data_a_ngiorni(start_date)
     max_days = math.floor(max_months * 30)
     end = start + max_days
@@ -17,28 +24,32 @@ def generate_temp_arrays(path_t, n_giorni, max_months, overlap, start_date  = '1
     if end_y > 2021 or (end_y == 2021 and end_m>9) or (end_y == 2021 and end_m == 9 and end_d > 15):
         raise("Too many days")
     if overlap > n_giorni or n_giorni > max_days or overlap > max_days:
-        raise("Incompatible sizes")
+        raise("Incompatible sizes") """
     
-    #calcolo del numero di intervalli
+    start = cgd.data_a_ngiorni(start_date)
+    end = start + (K) * (n_giorni - overlap) 
+    end_date = cgd.ngiorni_a_data(end)
+    if end > cgd.data_a_ngiorni("15/09/2021"):
+        raise ValueError('Too many intervals')
+    
+    """ #calcolo del numero di intervalli
     used_days = n_giorni
     count = 1
     while used_days <= max_days - n_giorni + overlap:
         used_days += n_giorni - overlap
         count += 1
-    print(str(count) + " intervals can be generated")
+    print(str(count) + " intervals can be generated") """
 
     if n_timesteps == None:
-        n_timesteps = n_giorni*2
+        n_timesteps = max(n_giorni*2, 100)
 
 
-    temp = ext.extract_temperatures(path_t, n_timesteps, start_date, n_mesi, region)
+    temp = ext.extract_temperatures(path_t, n_timesteps, start_date, n_mesi, regions)
     start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_date) + n_giorni - overlap)
-    for i in range(count - 1):
+    for i in range(K - 1):
         start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_new) + n_giorni - overlap)
-        temp_new = ext.extract_temperatures(path_t, n_timesteps, start_new, n_mesi)
+        temp_new = ext.extract_temperatures(path_t, n_timesteps, start_new, n_mesi, regions)
         temp = np.concatenate((temp, temp_new), axis = 0)
-        
-    
     return temp
 
     

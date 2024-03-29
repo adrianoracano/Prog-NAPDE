@@ -3,41 +3,63 @@ from tensorflow import keras as tfk
 from keras import layers as tfkl
 import numpy as np
 import pickle
+import os
 
 tf.keras.backend.set_floatx('float64')
 
 
 class Model:
     def __init__(self, n_input, n_hidden, learning_rate, b_ref, addDropout = False ,\
-                 addBNorm = True, load_path = '', NormalizeInput = False, use_keras = False, loss_R = False):
+                 addBNorm = True, load_path = '', NormalizeInput = False, use_keras = False, loss_R = False, numLayers = 1):
         self.n_input = n_input
         self.n_hidden = n_hidden
+        self.numLayers = numLayers
         self.b_ref = b_ref
         self.n_output = 1
         self.use_keras = use_keras
+        self.n_iter = 0
         if(len(load_path)>0):
             print("Loading model from " + load_path + "...\n")
             self.load_model(load_path)
+            self.n_hidden = len(self.weights['h1'][0])
+            self.numLayers = len(self.weights) - 1
         else:
-            self.weights = {
-            'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-            #'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-            'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
-            }
-            self.biases = {
-            'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
-            #'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
-            'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
-            }
-            print("Generating new model with standard parameters ...\n")
+            if(numLayers == 1):
+              self.weights = {
+              'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              #'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
+              }
+              self.biases = {
+              'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              #'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
+              }
+              print("Generating new model with standard parameters ...\n")
+            elif(numLayers == 2):
+              self.weights = {
+              'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
+              }
+              self.biases = {
+              'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
+              }
+              print("Generating new model with standard parameters ...\n")
             
         if not NormalizeInput:
             self.g = self.g_not_normalized
         else:
             self.g = self.g_normalized
+
+        if numLayers  == 1:
+            self.multilayer_perceptron = self.multilayer_perceptron_1layer
+        elif numLayers == 2:
+            self.multilayer_perceptron = self.multilayer_perceptron_2layers
             
         self.optimizer = tf.optimizers.Adam(learning_rate)
-        self.n_iter = 0
         self.keras_model = tfk.Sequential()
         self.keras_model.add(tfkl.Dense(
             units=self.n_hidden,
@@ -76,12 +98,19 @@ class Model:
         else:
             self.loss = self.custom_loss
 
-    def multilayer_perceptron(self, x):
+    def multilayer_perceptron_1layer(self, x):
         layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
         layer_1 = tf.nn.sigmoid(layer_1)
         #layer_2 = tf.add(tf.matmul(x, self.weights['h2']), self.biases['b2'])
         #layer_2 = tf.nn.sigmoid(layer_2)
         output = tf.matmul(layer_1, self.weights['out']) + self.biases['out']
+        return output
+    def multilayer_perceptron_2layers(self, x):
+        layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
+        layer_1 = tf.nn.sigmoid(layer_1)
+        layer_2 = tf.add(tf.matmul(x, self.weights['h2']), self.biases['b2'])
+        layer_2 = tf.nn.sigmoid(layer_2)
+        output = tf.matmul(layer_2, self.weights['out']) + self.biases['out']
         return output
     def g_not_normalized(self, y, v):
         v.shape = (v.shape[0], self.n_input-1)
@@ -179,15 +208,17 @@ class Model:
             self.keras_model = tfk.models.load_model(load_path)
         else:
             with open(load_path, 'rb') as file:
-                self.weights, self.biases = pickle.load(file)
+                self.weights, self.biases, self.n_iter = pickle.load(file)
     def save_model(self, save_path):
         print("Saving the model in " + save_path + "...\n")
-        #
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        save_path += '/model.pkl'
         if self.use_keras:
             self.keras_model.save(save_path + "iter" + str(self.n_iter))
         else:
             with open(save_path, 'wb') as file:
-                pickle.dump((self.weights, self.biases), file)
+                pickle.dump((self.weights, self.biases, self.n_iter), file)
 
 class NetworkForSIR:
     def __init__(self, model, display_step, t_max, alpha):
@@ -195,6 +226,7 @@ class NetworkForSIR:
         self.display_step = display_step
         self.t_max = t_max
         self.alpha = alpha
+
     def train(self, dataset, I,val_set, I_val, beta0_train, beta0_val, max_iter, display_weights, validate = True):
         display_step = self.display_step
         print("Starting the training...\n")

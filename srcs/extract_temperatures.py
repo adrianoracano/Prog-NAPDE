@@ -5,21 +5,33 @@ import re
 import math
 from scipy.interpolate import make_interp_spline
 
+reg_list = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
+                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
+                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
 
-def extract_temperatures(path, n_timesteps, start, n_mesi, file_prefix =  ['Milano']):
+
+def extract_temperatures(path, n_timesteps, start, n_mesi, regions = reg_list):
 
     # Specify the file path
-    #              
+
+    file_prefix = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
+                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
+                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
+                    
+    reg_list = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
+                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
+                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
+                    
     file_month = ["Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre",
                   "Novembre", "Dicembre"]
     
     # Specify the base directory relative to the script location
     
     # Create an array of zeros with shape (19, 335)
-    tmedia_val = np.zeros((len(file_prefix), 335 + 365))
+    tmedia_val = np.zeros((len(regions), 335 + 365))
     
     # Initialize the last filled index for each location
-    last_filled_index = np.zeros(len(file_prefix), dtype=int)
+    last_filled_index = np.zeros(len(regions), dtype=int)
     
     # Load and append data from additional CSV files for each location and month
     for anno in ['2020', '2021']:
@@ -28,7 +40,7 @@ def extract_temperatures(path, n_timesteps, start, n_mesi, file_prefix =  ['Mila
         else:
             months_list = ['Gennaio'] + file_month
         for month_idx, month in enumerate(months_list):
-            for location_idx, prefix in enumerate(file_prefix):
+            for location_idx, prefix in enumerate(regions):
 
                 try:
                     file_path = os.path.join(path, prefix, f"{prefix}-" + anno + f"-{month}.csv")
@@ -80,7 +92,9 @@ def extract_temperatures(path, n_timesteps, start, n_mesi, file_prefix =  ['Mila
     new_indices = np.linspace(0, tmedia_val.shape[1] - 1, math.floor(50 * n_mesi / 12))
 
     # Inizializzazione dell'array di output
-    arr_interp = np.zeros((tmedia_val.shape[0], math.floor(50 * n_mesi / 12)))
+    n_interp_point = max(10,math.floor(50 * n_mesi / 12))
+    new_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_interp_point)
+    arr_interp = np.zeros((tmedia_val.shape[0], n_interp_point))
     spline_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_timesteps)
     T_spline = np.zeros((tmedia_val.shape[0], n_timesteps))
     # Interpolazione lineare lungo l'asse N per ogni riga

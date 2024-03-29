@@ -93,7 +93,7 @@ def extract_infects(path, n_timesteps, start, n_mesi, regions = reg_list):
     for curr_m in range(m)[1:]:
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
-    giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
+    giorni_prec = giorni_prec + 1 * (y == 2020) + 365 * (y == 2021)
     index_start = -54 + giorni_prec + d
 
     dfi = dfi.loc[index_start: index_start + n_giorni - 1]
