@@ -5,7 +5,7 @@ import numpy as np
 from scipy.interpolate import make_interp_spline
 from utilities import SirHelperFunctions as shr
 import converti_ngiorni_data as cgd
-
+from matplotlib import pyplot as pltS
 reg_list = ['Abruzzo',
      'Basilicata',
      'Calabria',
@@ -70,7 +70,6 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     if overlap > n_giorni or n_giorni > max_days or overlap > max_days:
         raise("Incompatible sizes") """
     
-    
     start = cgd.data_a_ngiorni(start_date)
     end = start + (K) * (n_giorni - overlap) 
     end_date = cgd.ngiorni_a_data(end)
@@ -104,15 +103,15 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         rimossi_new =  exr.extract_removed(path_i, n_timesteps, start_new, n_mesi, regions)
         rimossi = np.concatenate((rimossi, rimossi_new), axis = 0) """
 
-    
     for i in range(K - 1):
         start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_new) + n_giorni - overlap)
+        print(start_new)
         infetti_new, beta_log_new = exi.extract_infects(path_i, n_timesteps, start_new, n_mesi, regions)
         infetti = np.concatenate((infetti, infetti_new), axis = 0)
         beta_log = np.concatenate((beta_log, beta_log_new), axis = 0)
         rimossi_new =  exr.extract_removed(path_i, n_timesteps, start_new, n_mesi, regions)
         rimossi = np.concatenate((rimossi, rimossi_new), axis = 0)
-      
+
     #smoothing infetti ===============================================
     """ 
     smooth = False
@@ -126,7 +125,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         spline_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps + 1)
         inf_spline = np.zeros(shape=(I_vec.shape[0], n_timesteps + 1))
  """
-    #beta sintetico ==================================================
+    # beta sintetico =================================================
     use_positive = True #per tagliare beta_log negativo
     if use_positive:
         beta_log = beta_log.clip(min = 0)
@@ -134,7 +133,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     use_up_bound = True
     if use_up_bound:
         beta_log = beta_log.clip(max = up_bound)
-    K_b = 1 / 3 # percentule di timestep per interpolare beta, regola lo smoothing di beta
+    K_b = 1 / 3 # percentuale di timestep per interpolare beta, regola lo smoothing di beta
     n_interp_points = math.floor((n_timesteps) * K_b)
     new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
     beta_log_interp = np.zeros(shape=(beta_log.shape[0], n_interp_points))
@@ -177,8 +176,11 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     beta_spline.clip(min = 0) 
     K_b2 = 1 / 5 # per smoothare la parte = 0
     n_interp_points = math.floor((n_timesteps) * K_b2)
+    beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
     new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
     for i in range(beta_log.shape[0]):
+        beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
+        spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
         beta_spline[i, :] = spline(spline_indices)
 
     #generazione degli infetti tramite il SIR=========================
