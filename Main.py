@@ -89,6 +89,7 @@ b_ref = alpha * math.log(S0/S_inf) / (1.0 - S_inf)
 ###########################
 # viene caricato il dataset
 ###########################
+n_giorni = None
 path_dataset = 'datasets/'+ dataset_name
 try:
     with open(path_dataset, 'rb') as file:
@@ -96,7 +97,7 @@ try:
             dataset,val_set,test_set,beta0_train,beta0_val,beta0_test = pickle.load(file)  # viene caricato il  dataset
         elif args.beta_log:
             # vengono presi gli infetti (ricostruiti col beta-log), il beta-log e le temperature (+ zone, ...)
-            I_train, I_val, dataset, val_set, beta_train, beta_val = pickle.load(file)
+            I_train, I_val, dataset, val_set, beta_train, beta_val, n_giorni = pickle.load(file)
         else:
             # Se si vogliono utilizzare dati reali vengono caricati gli infetti
             # e dati vari, come le temperature e i valori di beta0
@@ -191,10 +192,10 @@ got_beta_for_plot = args.test_case or args.beta_log
 
 if args.plot_train and got_beta_for_plot:
     plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
-                                 "train", 1, save_plots=saved_plots_path)
+                                 "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 if args.plot_test and got_beta_for_plot:
     plot_solutions.plot_beta_I_2(I_test_nn, b_test_nn, I_test, beta_test, \
-                                 "test", 1, save_plots=saved_plots_path)
+                                 "test", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 # se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete

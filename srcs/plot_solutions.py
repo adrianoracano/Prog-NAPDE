@@ -64,10 +64,10 @@ def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, sa
             #plt.show()
             plt.close()
 
-def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 4): #rows è 2 ma di fatto è 4 perchè ci sono anche infetti
+def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 4, n_giorni = None): #rows è 2 ma di fatto è 4 perchè ci sono anche infetti
     K = beta_nn.shape[0]
     N = beta_nn.shape[1]
-    t = np.linspace(0., 1., N) * 12
+    t = np.linspace(0., 1., N) * n_giorni
     K_vec = np.arange(start = 0, stop = K-2, step = plot_display * rows * cols)
     for k in K_vec:
         fig, ax = plt.subplots(nrows = rows * 2, ncols = cols, figsize = (cols * 3 + 1, rows*3))
@@ -86,29 +86,40 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 if len(beta) > 0: # di default beta = [], vuol dire che i beta veri non sono noti
                     ax[2*i , j].plot(t, beta[k + j + i* cols, :])
                     if j % cols == 0:
-                        ax[2*i , j].legend([beta_str + " rete", beta_str +  " reali"],  bbox_to_anchor=(-0.2, 1))#, prop={'size': 8})
-                    ax[2*i , j].set_xlabel("t")
+                        ax[2*i , j].legend(["network " + beta_str ,"real " + beta_str ],  bbox_to_anchor=(-0.2, 1))#, prop={'size': 8})
+                    #ax[2*i , j].set_xlabel("day")
                         #ax[2*i , j].set_ylabel(beta_str)
-                    #else:
-                     #   ax[2*i , j].set_yticks([])
+                    else:
+                        print("removing y_ticks from beta")
+                        ax[2*i , j].set_yticks([])
                 else:
                     if j % cols == 0:
                         ax[2*i, j].legend([beta_str + " rete"], bbox_to_anchor=(-0.23, 1))#, prop={'size': 8})
-                        ax[2*i , j].set_xlabel("t")
+                        ax[2*i , j].set_xlabel("day")
                         #ax[2*i , j].set_ylabel(beta_str)
                 ax[2*i , j].set_xticks([])
                 ax[2*i + 1 , j].plot(t, I_nn[k + j + i * cols, :])
                 ax[2*i + 1 , j].plot(t, I[k + j + i * cols, :])
                 #ax[2*i + 1 , j].set_xticks([range(min(np.round(t)), max(np.round(t)) + 1)])
                 if j % cols == 0:
-                    ax[2*i + 1 , j].legend(["I rete", "I reali"], bbox_to_anchor=(-0.23, 1))#, prop={'size': 8})
-                ax[2*i + 1, j].set_xlabel("t")
+                    ax[2*i + 1 , j].legend(["network I", "real I"], bbox_to_anchor=(-0.23, 1))#, prop={'size': 8})
                     #ax[2*i + 1, j].set_ylabel("Infetti")
-                #else:
-                #    ax[2*i + 1, j].set_yticks([])
+                else:
+                    print("removing y_ticks from I")
+                    ax[2*i + 1, j].set_yticks([])
+                ax[2*i + 1, j].set_xlabel("day")
 
                 ax[2*i , j].set_title(set_type + ' n°' + str(k + j + i * cols + 1))
-                plt.subplots_adjust(left=0.2, bottom=0.137, right=0.98, top=0.844, wspace=0.3, hspace=0.0)
+                if i != 0 or j != 0:
+                    ax[2*i, j].sharey(ax[0,0])
+                    ax[2*i + 1, j].sharey(ax[1,0])
+                    if j % cols == 0:
+                        ax[2*i + 1, j].set_yticks([])
+                        ax[2*i , j].set_yticks([])
+
+                """ if not n_giorni == None:
+                    ax[2*i + 1, j].set_xticks(np.arange(1, n_giorni, 3)) """
+                plt.subplots_adjust(left=0.155, bottom=0.155, right=0.98, top=0.9, wspace=0.25, hspace=0.0)
     #plt.tight_layout()  # Per evitare sovrapposizioni
 
 
@@ -120,7 +131,7 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 os.makedirs(path)
             filepath2 = path + "/" + set_type + " n°" + str(k + 1) + ".png";
             plt.savefig(fname=filepath2)
-    #plt.show()
+    plt.show()
     #plt.close()
 
 

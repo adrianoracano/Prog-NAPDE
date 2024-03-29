@@ -23,28 +23,30 @@ class Model:
             self.load_model(load_path)
             self.n_hidden = len(self.weights['h1'][0])
             self.numLayers = len(self.weights) - 1
+            print('len(weights) of the loaded model is ' + str(numLayers))
+            print('number of layers of the loaded model is ' + str(self.numLayers))
         else:
-            if(numLayers == 1):
+            if(self.numLayers == 1):
               self.weights = {
-              'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              'h1': tf.Variable(tf.random.normal([self.n_input, self.n_hidden], dtype='float64'), dtype='float64'),
               #'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-              'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
+              'out': tf.Variable(tf.random.normal([self.n_hidden, self.n_output], dtype='float64'), dtype='float64')
               }
               self.biases = {
-              'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              'b1': tf.Variable(tf.random.normal([self.n_hidden], dtype='float64'), dtype='float64'),
               #'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
               'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
               }
               print("Generating new model with standard parameters ...\n")
-            elif(numLayers == 2):
+            elif(self.numLayers == 2):
               self.weights = {
-              'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-              'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-              'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
+              'h1': tf.Variable(tf.random.normal([self.n_input, self.n_hidden], dtype='float64'), dtype='float64'),
+              'h2': tf.Variable(tf.random.normal([self.n_hidden, self.n_hidden], dtype='float64'), dtype='float64'),
+              'out': tf.Variable(tf.random.normal([self.n_hidden, self.n_output], dtype='float64'), dtype='float64')
               }
               self.biases = {
-              'b1': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
-              'b2': tf.Variable(tf.random.normal([n_hidden], dtype='float64'), dtype='float64'),
+              'b1': tf.Variable(tf.random.normal([self.n_hidden], dtype='float64'), dtype='float64'),
+              'b2': tf.Variable(tf.random.normal([self.n_hidden], dtype='float64'), dtype='float64'),
               'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
               }
               print("Generating new model with standard parameters ...\n")
@@ -54,9 +56,9 @@ class Model:
         else:
             self.g = self.g_normalized
 
-        if numLayers  == 1:
+        if self.numLayers  == 1:
             self.multilayer_perceptron = self.multilayer_perceptron_1layer
-        elif numLayers == 2:
+        elif self.numLayers == 2:
             self.multilayer_perceptron = self.multilayer_perceptron_2layers
             
         self.optimizer = tf.optimizers.Adam(learning_rate)
@@ -108,7 +110,7 @@ class Model:
     def multilayer_perceptron_2layers(self, x):
         layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
         layer_1 = tf.nn.sigmoid(layer_1)
-        layer_2 = tf.add(tf.matmul(x, self.weights['h2']), self.biases['b2'])
+        layer_2 = tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2'])
         layer_2 = tf.nn.sigmoid(layer_2)
         output = tf.matmul(layer_2, self.weights['out']) + self.biases['out']
         return output
