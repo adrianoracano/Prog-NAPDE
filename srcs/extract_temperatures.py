@@ -6,15 +6,10 @@ import math
 from scipy.interpolate import make_interp_spline
 
 
-def extract_temperatures(path, n_timesteps, start, n_mesi):
+def extract_temperatures(path, n_timesteps, start, n_mesi, file_prefix =  ['Milano']):
 
     # Specify the file path
-
-    file_prefix = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
-                    "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 
-                    "Firenze", "Perugia", "Verona", "Bolzano", "Trento"]
-                    
-                    
+    #              
     file_month = ["Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre",
                   "Novembre", "Dicembre"]
     
@@ -80,6 +75,7 @@ def extract_temperatures(path, n_timesteps, start, n_mesi):
         return arr
 
     tmedia_val = replace_nan_with_previous(tmedia_val)
+    return tmedia_val
 
     new_indices = np.linspace(0, tmedia_val.shape[1] - 1, math.floor(50 * n_mesi / 12))
 
