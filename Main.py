@@ -98,6 +98,7 @@ try:
         elif args.beta_log:
             # vengono presi gli infetti (ricostruiti col beta-log), il beta-log e le temperature (+ zone, ...)
             I_train, I_val, dataset, val_set, beta_train, beta_val, n_giorni = pickle.load(file)
+            t_max = n_giorni/30
         else:
             # Se si vogliono utilizzare dati reali vengono caricati gli infetti
             # e dati vari, come le temperature e i valori di beta0
@@ -115,7 +116,7 @@ print('data:\n')
 print('S0: ', S0, ', I0: ', I0, ', S_inf: ', S_inf)
 print('bet_ref: ', b_ref)
 print('K:', dataset.shape[0], ', K_val:', val_set.shape[0])
-print('t_max: ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
+print('t_max (in mesi) : ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
 print('layers: ', num_layers)
 print('hidden neurons per layer: ', n_hidden, '\n')
 
