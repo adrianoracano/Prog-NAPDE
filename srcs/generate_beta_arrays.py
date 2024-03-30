@@ -92,7 +92,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     infetti, beta_log = exi.extract_infects(path_i, n_timesteps, start_date, n_mesi, regions)
     rimossi =  exr.extract_removed(path_i, n_timesteps, start_date, n_mesi, regions)
     start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_date) + n_giorni - overlap)
-
+    date = [start_new]
     #vecchia parte con max_months commentata
     """ 
     for i in range(count - 1):
@@ -106,6 +106,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     for i in range(K - 1):
         start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_new) + n_giorni - overlap)
         print(start_new)
+        date.append(start_new)
         infetti_new, beta_log_new = exi.extract_infects(path_i, n_timesteps, start_new, n_mesi, regions)
         infetti = np.concatenate((infetti, infetti_new), axis = 0)
         beta_log = np.concatenate((beta_log, beta_log_new), axis = 0)
@@ -205,7 +206,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         beta_spline = np.delete(beta_spline, random_id, axis = 0)
       """
 
-    return beta_spline, infetti_SIR #, beta_spline_val, infetti_SIR_val
+    return beta_spline, infetti_SIR, date #, beta_spline_val, infetti_SIR_val
 
 
 
