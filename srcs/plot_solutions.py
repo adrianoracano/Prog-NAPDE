@@ -64,7 +64,7 @@ def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, sa
             #plt.show()
             plt.close()
 
-def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 4, n_giorni = None): #rows è 2 ma di fatto è 4 perchè ci sono anche infetti
+def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 5, n_giorni = None): #rows è 2 ma di fatto è 4 perchè ci sono anche infetti
     K = beta_nn.shape[0]
     N = beta_nn.shape[1]
     t = np.linspace(0., 1., N) * n_giorni
@@ -111,17 +111,16 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
 
                 ax[2*i , j].set_title(set_type + ' n°' + str(k + j + i * cols + 1))
                 if i != 0 or j != 0:
-                    ax[2*i, j].sharey(ax[0,0])
-                    ax[2*i + 1, j].sharey(ax[1,0])
-                    if j % cols == 0:
+                    ax[2*i, j].set_ylim(ax[0,0].get_ylim())
+                    ax[2*i + 1, j].set_ylim(ax[1,0].get_ylim())
+                    """ if j % cols == 0:
                         ax[2*i + 1, j].set_yticks([])
-                        ax[2*i , j].set_yticks([])
+                        ax[2*i , j].set_yticks([]) """
 
                 """ if not n_giorni == None:
                     ax[2*i + 1, j].set_xticks(np.arange(1, n_giorni, 3)) """
-                plt.subplots_adjust(left=0.155, bottom=0.155, right=0.98, top=0.9, wspace=0.25, hspace=0.0)
+                plt.subplots_adjust(left=0.155, bottom=0.155, right=0.98, top=0.9, wspace=0, hspace=0.0)
     #plt.tight_layout()  # Per evitare sovrapposizioni
-
 
             #ax[2*i, j].set_title(set_type + " n° " + str(k + j + i * cols))
         if len(save_plots) > 0:
