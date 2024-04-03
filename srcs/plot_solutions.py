@@ -64,22 +64,24 @@ def plot_beta_I(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, sa
             #plt.show()
             plt.close()
 
-def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 5, n_giorni = None, date = None): #rows è 2 ma di fatto è 4 perchè ci sono anche infetti
+def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, save_plots = '', rows = 1, cols = 5, n_giorni = None, date = None): #rows è 1 ma di fatto è 2 perchè ci sono anche infetti
     K = beta_nn.shape[0]
     N = beta_nn.shape[1]
     t = np.linspace(0., 1., N) * n_giorni
-    K_vec = np.arange(start = 0, stop = K-2, step = plot_display * rows * cols)
-    j_lim = cols
+    K_vec = np.arange(start = 0, stop = K, step = plot_display * rows * cols)
     real_cols = cols
-    avoid_last_loop = 0
-    if max(1, cols - np.mod(rows * cols, K - K_vec[-1])) == 1:
-        avoid_last_loop = 1 #se rimane solo un'immagine fuori dà sempre problemi
-    for k in K_vec - avoid_last_loop:
+    """ if max(1, cols - np.mod(rows * cols, K - K_vec[-1])) == 1:
+        avoid_last_loop = 1 #se rimane solo un'immagine fuori dà sempre problemi """
+    
+    for k in K_vec:
         #subplots
-        if k == K_vec[-1] and not np.mod(rows * cols, K - k) :
-            real_cols = max(1, cols - np.mod(rows * cols, K - k) - 1)
-            print("real_cols : " + str(real_cols))
-        fig, ax = plt.subplots(nrows = rows * 2, ncols = real_cols, figsize = (cols * 3 + 1, rows*3))
+        if k == K_vec[-1] :
+            if np.mod(K, k) == 1:
+                break
+            else:
+                real_cols = np.mod(K, k)
+                print("real_cols : " + str(real_cols))
+        fig, ax = plt.subplots(nrows = rows * 2, ncols = real_cols, figsize = (real_cols * 3 + 1, rows*3))
         plt.subplots_adjust(left=0.06, bottom=0.137, right=0.98, top=0.844, wspace=0.05, hspace=0.0)
         y_lim0up = []
         y_lim0down = []
