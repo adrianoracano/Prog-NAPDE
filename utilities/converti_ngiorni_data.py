@@ -28,6 +28,6 @@ def data_a_ngiorni(data):
     for curr_m in range(m)[1:]:
         giorni_prec = giorni_prec + 31 - 3 * (curr_m == 2) + (-1) * (
                 curr_m == 4 or curr_m == 6 or curr_m == 9 or curr_m == 11)
-    giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
+    giorni_prec = giorni_prec + 1 * ((y == 2020 and (m >= 2 or m==2 and d == 29)) or y>2020 ) + 365 * (y == 2021) 
     giorni_prec = giorni_prec + d;
     return giorni_prec

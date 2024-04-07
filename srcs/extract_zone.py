@@ -8,7 +8,29 @@ from scipy.interpolate import make_interp_spline
 
 pd.options.display.max_columns = 21
 
-def extract_zones(n_timesteps, start, n_mesi):
+reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Molise',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     "Valle d'Aosta",
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
+
+def extract_zones(n_timesteps, start, n_mesi, regions = reg_list):
 
     n_giorni = 365
 
@@ -260,7 +282,8 @@ def extract_zones(n_timesteps, start, n_mesi):
     
     dsz=dsz.reindex(columns=reg_list)
     
-    dsz = dsz.drop(columns = ['Molise', "Valle d'Aosta"])
+    # dsz = dsz.drop(columns = ['Molise', "Valle d'Aosta"])
+    dsz = dsz[regions]
 
     n_giorni = math.floor(365 * n_mesi / 12)
     d, m, y = (int(s) for s in (re.findall(r'\b\d+\b', start)))
@@ -271,17 +294,40 @@ def extract_zones(n_timesteps, start, n_mesi):
     giorni_prec = giorni_prec + 1 * (y == 2020) + 366 * (y == 2021)
     index_start = - 54 + giorni_prec + d;
 
-    dsz = dsz.loc[index[index_start : index_start + n_giorni]]
+    # print("index : ", index)
+    
+    dsz = dsz.loc[index[index_start : index_start + n_giorni]]#questo dà rproblemiS
+    
     
     Z_vec = np.array(dsz).transpose()
-    arr_interp = np.zeros((Z_vec.shape[0], math.floor(50 * n_mesi / 12)))
-    new_indices = np.linspace(0, Z_vec.shape[1] - 1, math.floor(50 * n_mesi / 12))
-    spline_indices = np.linspace(0, Z_vec.shape[1] - 1, n_timesteps)
-    zone_spline = np.zeros((Z_vec.shape[0], n_timesteps))
+
+    # Inizializzazione dell'array di output
+    # K = 1 / 3.6 #percentuale dei timestep usati per interpolare le zone, già qui viene fatto uno smoothing
+    # n_interp_point = max(10,math.floor(n_giorni * K)) #numero punti in cui interpolare gli infetti, circa 
+
+    # arr_interp = np.zeros((Z_vec.shape[0], n_interp_point))
+    # new_indices = np.linspace(0, Z_vec.shape[1] - 1, n_interp_point)
+    spline_indices = np.linspace(0, Z_vec.shape[1] - 1, n_timesteps + 1)
+    zone_spline = np.zeros((Z_vec.shape[0], n_timesteps + 1))
     # Interpolazione lineare lungo l'asse N per ogni riga
     for i in range(Z_vec.shape[0]):
-        arr_interp[i, :] = np.interp(new_indices, np.arange(Z_vec.shape[1]), Z_vec[i, :])
-        spline = make_interp_spline(new_indices, arr_interp[i, :])
-        zone_spline[i, :] = spline(spline_indices)
-    return zone_spline
+        # arr_interp[i, :] = np.interp(new_indices, np.arange(Z_vec.shape[1]), Z_vec[i, :])
+        # spline = make_interp_spline(new_indices, arr_interp[i, :])
+        zone_spline[i, :] = np.interp(spline_indices,  np.arange(Z_vec.shape[1]), Z_vec[i, :])
 
+    return zone_spline
+    """ 
+    rows = len(regions)
+    cols = n_days 
+    x = np.arange(cols)
+
+    for i in range(rows):
+      
+      y = Z_vec[i]
+
+      spline = make_interp_spline(x,y)
+
+      n_interp_points = 10;
+      new_x = np.linspace(X[0], x[-1], n_interp_points)
+      new_y = spline(new_x)
+        """
