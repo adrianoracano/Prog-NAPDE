@@ -13,18 +13,18 @@ import pickle
 .
 """
 
-n_timesteps = 100
-path_i = "COVID-19/dati-regioni"
-K = 8
+n_timesteps = 150
+path_i = "../dati-regioni"
+K = 25
 n_giorni = 25
 overlap = 5
-path_t = "Temperature"
-nome_file = "prova_dataset_betalog_1.pkl"
-K_train = 5 # il resto è messo nel validation set
+path_t = "../prova-estrazione-temp/Temperature"
+nome_file = "betalog.pkl"
+K_train = 20 # il resto è messo nel validation set
 
 # vengono estratti i dati
-beta, infetti = gba.generate_beta_arrays(path_i, K, n_giorni, overlap, regions = ["Abruzzo"])
-temp = gta.generate_temp_arrays(path_t, K, n_giorni, overlap, regions = ["Chieti"])
+beta, infetti = gba.generate_beta_arrays(path_i, K, n_giorni, overlap, regions = ["Lazio"])
+temp = gta.generate_temp_arrays(path_t, K, n_giorni, overlap, regions = ["Roma"])
 
 print(beta.shape)
 print(temp.shape)

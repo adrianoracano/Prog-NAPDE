@@ -4,7 +4,7 @@ import math
 import numpy as np
 from scipy.interpolate import make_interp_spline
 from utilities import SirHelperFunctions as shr
-import converti_ngiorni_data as cgd
+from utilities import converti_ngiorni_data as cgd
 from matplotlib import pyplot as pltS
 reg_list = ['Abruzzo',
      'Basilicata',

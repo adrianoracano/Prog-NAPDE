@@ -2,7 +2,7 @@ from srcs import extract_temperatures as ext
 import numpy as np
 import math
 import re
-import converti_ngiorni_data as cgd
+from utilities import converti_ngiorni_data as cgd
 
 reg_list = ["Chieti", "Matera", "Cosenza", "Napoli", "Bologna", "Trieste", "Roma",
                     "Genova", "Milano", "Ancona", "Torino", "Bari", "Cagliari","Palermo", 

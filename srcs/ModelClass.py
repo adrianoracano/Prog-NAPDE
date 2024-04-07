@@ -39,7 +39,7 @@ class Model:
             elif(numLayers == 2):
               self.weights = {
               'h1': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
-              'h2': tf.Variable(tf.random.normal([self.n_input, n_hidden], dtype='float64'), dtype='float64'),
+              'h2': tf.Variable(tf.random.normal([n_hidden, n_hidden], dtype='float64'), dtype='float64'),
               'out': tf.Variable(tf.random.normal([n_hidden, self.n_output], dtype='float64'), dtype='float64')
               }
               self.biases = {
@@ -108,7 +108,7 @@ class Model:
     def multilayer_perceptron_2layers(self, x):
         layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
         layer_1 = tf.nn.sigmoid(layer_1)
-        layer_2 = tf.add(tf.matmul(x, self.weights['h2']), self.biases['b2'])
+        layer_2 = tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2'])
         layer_2 = tf.nn.sigmoid(layer_2)
         output = tf.matmul(layer_2, self.weights['out']) + self.biases['out']
         return output

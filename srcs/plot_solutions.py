@@ -120,7 +120,7 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 os.makedirs(path)
             filepath2 = path + "/" + set_type + " n°" + str(k + 1) + ".png";
             plt.savefig(fname=filepath2)
-    #plt.show()
+    plt.show()
     #plt.close()
 
 

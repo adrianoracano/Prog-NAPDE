@@ -87,10 +87,6 @@ def extract_temperatures(path, n_timesteps, start, n_mesi, regions = reg_list):
         return arr
 
     tmedia_val = replace_nan_with_previous(tmedia_val)
-    return tmedia_val
-
-    new_indices = np.linspace(0, tmedia_val.shape[1] - 1, math.floor(50 * n_mesi / 12))
-
     # Inizializzazione dell'array di output
     n_interp_point = max(10,math.floor(50 * n_mesi / 12))
     new_indices = np.linspace(0, tmedia_val.shape[1] - 1, n_interp_point)
