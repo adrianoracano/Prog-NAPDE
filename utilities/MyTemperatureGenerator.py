@@ -7,7 +7,7 @@ Created on Sun May 21 16:40:50 2023
 import random
 import math
 
-
+"""
 data_dict = {}
 
 with open('data.txt', 'r') as file:
@@ -17,6 +17,7 @@ with open('data.txt', 'r') as file:
             field, value = line.split(':')
             data_dict[field.strip()] = value.strip()
 t_max = data_dict['t_max']
+"""
 def generate_temperature(fun_type, t_max=1.0, T_max=1.0):
     if fun_type == "step":
         t1 = random.uniform(0., t_max)

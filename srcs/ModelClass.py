@@ -10,7 +10,7 @@ tf.keras.backend.set_floatx('float64')
 
 class Model:
     def __init__(self, n_input, n_hidden, learning_rate, b_ref, addDropout = False ,\
-                 addBNorm = True, load_path = '', NormalizeInput = False, use_keras = False, loss_R = False, numLayers = 1):
+                 addBNorm = True, load_path = '', use_keras = False, numLayers = 1):
         self.n_input = n_input
         self.n_hidden = n_hidden
         self.numLayers = numLayers
@@ -50,12 +50,6 @@ class Model:
               'out': tf.Variable(tf.random.normal([self.n_output], dtype='float64'), dtype='float64')
               }
               print("Generating new model with standard parameters ...\n")
-            
-        if not NormalizeInput:
-            self.g = self.g_not_normalized
-        else:
-            self.g = self.g_normalized
-
         if self.numLayers  == 1:
             self.multilayer_perceptron = self.multilayer_perceptron_1layer
         elif self.numLayers == 2:
@@ -94,11 +88,8 @@ class Model:
             self.keras_model.add(tfkl.Dropout(0.3))
         self.keras_model.add(tfkl.Dense(1))
         self.keras_model.add(tfkl.BatchNormalization())
-
-        if loss_R:
-            self.loss = self.custom_loss_R
-        else:
-            self.loss = self.custom_loss
+        
+        self.loss = self.custom_loss
 
     def multilayer_perceptron_1layer(self, x):
         layer_1 = tf.add(tf.matmul(x, self.weights['h1']), self.biases['b1'])
@@ -114,17 +105,7 @@ class Model:
         layer_2 = tf.nn.sigmoid(layer_2)
         output = tf.matmul(layer_2, self.weights['out']) + self.biases['out']
         return output
-    def g_not_normalized(self, y, v):
-        v.shape = (v.shape[0], self.n_input-1)
-        tv = tf.constant(v, dtype='float64')
-        x = tf.concat([y, tv], 1)
-        if self.use_keras:
-            return self.keras_model(x)
-        else:
-            return self.multilayer_perceptron(x)
-    def g_normalized(self, y, v):
-        y = (1.0/self.b_ref)*y
-        v = (1.0/self.b_ref)*v
+    def g(self, y, v):
         v.shape = (v.shape[0], self.n_input-1)
         tv = tf.constant(v, dtype='float64')
         x = tf.concat([y, tv], 1)
@@ -158,37 +139,6 @@ class Model:
             curr_beta = next_beta
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
-        return tf.reduce_sum(summation)
-
-    def custom_loss_R(self, dataset, I, R, t_max, alpha, beta0):
-        summation = []
-        K = I.shape[0]
-        N = I.shape[1]
-        b = np.zeros([K, 1], dtype = 'float64')
-        b[:, 0] = beta0 # potrebbe dare problemi?
-        curr_beta = tf.constant(b, dtype='float64')
-        curr_I_nn = tf.constant( I[:, 0], dtype='float64', shape = (K, 1))
-        curr_R_nn = tf.constant( R[:, 0], dtype='float64', shape = (K, 1))
-        curr_S_nn = tf.constant(1.0-I[:, 0] - R[:,0], dtype='float64', shape = (K, 1))
-        dt = 1.0/N
-        for i in range(N - 1):
-            next_beta = curr_beta + t_max *dt * self.g(curr_beta, dataset[:, i])
-            # step di eulero in avanti
-            next_S_nn = curr_S_nn - t_max * dt *  curr_beta * curr_S_nn * curr_I_nn
-            next_I_nn = curr_I_nn + t_max * dt * ( curr_beta * curr_S_nn * curr_I_nn -  alpha * curr_I_nn )
-            next_R_nn = curr_R_nn + t_max * dt * alpha * curr_I_nn;
-            I_exact = I[:, i + 1]
-            dI_exact = (I[:, i + 1] - I[:, i])/dt
-            R_exact = R[:, i + 1]
-            dR_exact = (R[:, i + 1] - R[:, i]) / dt
-            dI_nn = t_max * ( curr_beta * curr_S_nn * curr_I_nn -  alpha * curr_I_nn )
-            I_exact.shape = (I_exact.shape[0], 1)
-            dI_exact.shape = (dI_exact.shape[0], 1)
-            summation.append(tf.reduce_mean(tf.abs(tfkl.concatenate([next_I_nn - I_exact, next_R_nn - R_exact]))))
-            curr_beta = next_beta
-            curr_S_nn = next_S_nn
-            curr_I_nn = next_I_nn
-            curr_R_nn = next_R_nn
         return tf.reduce_sum(summation)
 
     def train_step(self, dataset, I, t_max, alpha, beta0):
@@ -249,12 +199,7 @@ class NetworkForSIR:
                                                                          self.t_max, self.alpha, beta0_val)
                         print("loss on validation set: %f" % loss_history_val[i_history])
                     i_history = i_history + 1
-                """
-                if i % display_weights == 0:
-                    print("pesi all'iterazione %i:")
-                    print(self.model.trainable_variables)
-                self.n_iter = i
-                """
+
         except KeyboardInterrupt:
             print('\nTraining interrupted by user. Proceeding to save the weights and plot the solutions...\n')
         return loss_history, loss_history_val, i_history
@@ -329,31 +274,3 @@ class NetworkForSIR:
         #   quindi deve utilizzare una qualche funzione definita dal membro self.model
         #   Una possibile idea è definire in ModelSIR un metodo chiamato ForwardEulerStep
     # 3) Rendere possibile la creazione di una rete con un solo input (beta)
-    
-    
-    
-    
-"""
-model = tfk.Sequential()
-model.add(tfkl.Dense(
-    units=n_hidden,
-    input_dim=self.n_input,
-    activation=None,
-    use_bias=True,
-    kernel_initializer="glorot_uniform",
-    bias_initializer="zeros",
-    kernel_regularizer=None,
-    bias_regularizer=None,
-    activity_regularizer=None,
-    kernel_constraint=None,
-    bias_constraint=None))
-if (addBNorm):
-    model.add(tfkl.BatchNormalization())
-model.add(tfkl.Activation('sigmoid'))
-if (addDropout):
-    model.add(tfkl.Dropout(0.3))
-model.add(tfkl.Dense(1))
-if (addBNorm):
-    model.add(tfkl.BatchNormalization())
-self.model = model
-"""

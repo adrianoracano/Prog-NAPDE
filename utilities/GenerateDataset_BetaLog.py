@@ -13,12 +13,12 @@ import math
 """
 
 n_timesteps = 100
-path_i = "COVID-19/dati-regioni"
+path_i = "../dati-regioni"
 regione_beta = ['Lombardia']
 K = 40
 n_giorni = 15
 overlap = 3
-path_t = "Temperature"
+path_t = "../prova-estrazione-temp/Temperature"
 regione_temp = ['Milano']
 nome_file = "Prova_Milano_zone_nuove_fun.pkl"
 K_train = math.floor(K*0.8) # il resto è messo nel validation set
