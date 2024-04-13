@@ -1,8 +1,8 @@
 __pycache__
 prova-personale.py
 prova-personale-con-T.py
-per-generare-temperature.py
 data.txt
 saved-weights
 mia-prova.py
-prova-derivate-mia.py
+saved-weights/descrizione-pasi.txt
+datasets

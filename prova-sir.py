@@ -9,14 +9,17 @@ Created on Tue May 23 12:45:34 2023
 QUETA E' UNA PROVA PER IMPLEMENARE IL SIR
 """
 import tensorflow as tf
+import os
 import numpy as np
 import MyTemperatureGenerator as tg
 import MyDatasetGenerator as dsg
-import HerRungeKutta as hrk
+from utilities import HerRungeKutta as hrk
 import argparse
 import sys
 import pickle
 from matplotlib import pyplot as plt
+from utilities import SirHelperFunctions as shf
+import math
 tf.keras.backend.set_floatx('float64')
 
 ########################
@@ -38,6 +41,7 @@ parser.add_argument('-pt', '--plot-train', help='plot using the train set', acti
 parser.add_argument('-lt', '--load-temp', help = 'load the temperatures', action = 'store_true')
 parser.add_argument('-d', '--default',  help = 'activate flags: --train, --validate, --load-temp', action = 'store_true')
 parser.add_argument('-o', '--overwrite', help = 'save and load the weights from the specified file', default = '')
+parser.add_argument('-sp', '--save-plots', help = 'save the plots in the specified file after the training', default = '')
 
 args = parser.parse_args()
 
@@ -45,13 +49,13 @@ if args.default:
     args.train = True
     args.validate = True
     args.load_temp = True
-    
+
 if len(args.overwrite)>0:
     args.save_weights = args.overwrite
     args.load_weights = args.overwrite
 
 if len(args.load_weights)>0 and args.new_weights:
-    print("Cannot generate new weights and loading existing ones. Stopping execution..")
+    print("Cannot generate new weights and loading existing ones. Aborting..\n")
     sys.exit()
 
 # print-help da completare
@@ -60,7 +64,9 @@ if args.print_help:
     print('scrivere help per lo script')
     sys.exit()
 
+###############################
 # i dati vengono presi dal file
+###############################
 
 data_dict = {}
 
@@ -77,6 +83,7 @@ n_input = 2
 n_hidden = int(data_dict['n_hidden']) # il numero di hidden neurons viene preso dal file data.txt
 n_output = 1
 display_step = int(data_dict['display_step'])
+solver = data_dict['solver'] # il tipo di metodo usato per il training: ea oppure rk
 
 ####################################
 # vengono generati o caricati i pesi
@@ -86,11 +93,17 @@ if len(args.load_weights) > 0:
     print("Loading weights from "+args.load_weights+"...\n")
     with open(args.load_weights, 'rb') as file:
         weights, biases, dataset = pickle.load(file)
+N = int(data_dict['N']) # in base a quanto vale N vengono caricate le temperature giuste
+
 if args.load_temp:
-    print("Loading the datasets...\n")
-    nome_file_temp = "LOAD_TEMP.pkl"
-    with open(nome_file_temp, 'rb') as file:
-        dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
+    nome_file_temp = 'datasets/'+data_dict['dataset']
+    try:
+        with open(nome_file_temp, 'rb') as file:
+            dataset, K, val_set, K_val, test_set, K_test = pickle.load(file)  # viene caricato il  dataset
+        print('dataset', nome_file_temp, 'loaded...\n')
+    except FileNotFoundError:
+        print('file',nome_file_temp,'not found...\n')
+        sys.exit()
         
 
 if args.new_weights:  
@@ -106,8 +119,8 @@ if args.new_weights:
 
 
 # Stochastic gradient descent optimizer.
-optimizer = tf.optimizers.SGD(learning_rate)
-# optimizer = tf.optimizers.Adam(learning_rate)
+# optimizer = tf.optimizers.SGD(learning_rate)
+optimizer = tf.optimizers.Adam(learning_rate)
 
 ##############
 # Create model
@@ -119,28 +132,39 @@ def multilayer_perceptron(x):
   output = tf.matmul(layer_1, weights['out']) + biases['out']
   return output
 
-    
+###################
+# definizione b_ref
+###################
+alpha = float(data_dict['alpha'])
+S0 = float(data_dict['S0'])
+S_inf = float(data_dict['S_inf'])
+b_ref = alpha*math.log(S0/S_inf)/(1-S_inf)
+
 def g(y, v):
-    tv = tf.constant([[v]], dtype = 'float64')
+    # prima di dare in input beta, T li normalizzo con b_ref
+    # y = (1.0/b_ref)*y
+    # v = (1.0/b_ref)*v
+    v.shape=(v.shape[0], 1)
+    tv = tf.constant(v, dtype = 'float64')
     x = tf.concat([y, tv], 1)
     return multilayer_perceptron(x)
 
 t_max = float(data_dict['t_max'])
 y0 = float(data_dict['beta0'])
 N = int(data_dict['N'])
-t = np.linspace(0, t_max, N)
-dt = t_max/N
+t = np.linspace(0, 1.0, N)
+dt = 1.0/N
 if not args.load_temp: # se le temperature non sono state caricate, il num di temperature è letto da data.txt
     K=int(data_dict['K']) # numero di temperature
-K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
+    K_val = int(data_dict['K_val']) # numero di temperature da usare nel validation set
 temperature= []
 temperature_val = []
 
 
 # vengono generate le temperature per il training
-
-def f(beta, T): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
-    return 5.0*((1.0-T) - beta)
+tau = 0.2
+def f(beta, Betaeq): # è la funzione che regola beta:   beta(t)' = f(beta(t), T(t))
+    return (1/tau)*(Betaeq - beta)*t_max#betaeq va cambiato con la t_return di mytemperaturegenerator, fatto
 
 
 data = {  # questo dict viene usato per generare il dataset
@@ -152,6 +176,7 @@ data = {  # questo dict viene usato per generare il dataset
 
 
 if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non sono stati caricati, vengono generate nuove temp
+    print("Generating new temperatures for train set...\n")
     for k in range(K):
         if len(args.fun_type) == 0: # override dei tipi di temperature
             T = tg.generate_temperature(data_dict["temperature_type"], t_max=t_max)
@@ -162,6 +187,7 @@ if len(args.load_weights) == 0 and not args.load_temp: # se i pesi e le temp non
 
 
 if args.validate and not args.load_temp: # vengono generate le temperature da usare nel validation set
+    print("Generating new temperatures for validation set...\n")
     for k in range(K_val):
         if len(args.fun_type) == 0:
             T_val = tg.generate_temperature(data_dict["temperature_type"], t_max = t_max)
@@ -181,7 +207,7 @@ a = float(data_dict['alpha'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0'])
 R0 = float(data_dict['R0'])
-TOT = S0 + I0 + R0 # popolazione totale
+#TOT = data_dict['TOT'] # popolazione totale
 sir_0 = np.array([S0, I0, R0])
 for k in range(K):
     s, i, r = hrk.RungeKutta(sir_0, dataset[1, k, ], N, t_max, a)
@@ -191,37 +217,41 @@ if args.validate:
         s, i, r = hrk.RungeKutta(sir_0, val_set[1, k, ], N, t_max, a)
         I_val[k, ] = i.copy()
 
-dt = t_max/N
+dt = 1.0/N
 step_summation = int(data_dict['step_summation'])
 
 ########################
 # definizione della loss
 ########################
 
-def custom_loss(K, dataset):
-    total_summation = []
-    for k in range(K):
-        curr_y = tf.constant([[y0]], dtype = 'float64')
-        summation = []
-        curr_I_nn = tf.constant([[sir_0[1]]], dtype = 'float64')
-        curr_S_nn = tf.constant([[sir_0[0]]], dtype= 'float64')
-        for i in range(N-1):
-            next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
-            next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-            next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
-            if i % step_summation == 0:
-                summation.append( ( ( next_I_nn - I[k, i+1] )/TOT )**2 )  
-            curr_y = next_y
-            curr_S_nn = next_S_nn
-            curr_I_nn = next_I_nn
-        total_summation.append(tf.reduce_sum(summation))
-        #print(tf.reduce_sum(total_summation))
-    return tf.reduce_mean(total_summation)
-    
+delta = 10.0
 
-def train_step(K, dataset):
+def custom_loss(K, dataset, I):
+
+    summation=[]
+    curr_beta = tf.constant( y0*np.ones([K, 1], dtype='float64'), dtype='float64')
+    curr_I_nn = tf.constant( sir_0[1]*np.ones([K, 1], dtype='float64'), dtype='float64')
+    curr_S_nn = tf.constant( sir_0[0]*np.ones([K, 1], dtype='float64'), dtype='float64')
+    for i in range(N-1):
+        next_beta = curr_beta + t_max*dt*g(curr_beta/b_ref, dataset[0,:,i]/b_ref)
+        if solver == 'ea':
+            next_S_nn = curr_S_nn - t_max*dt*curr_beta*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + t_max*dt*curr_beta*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
+        if solver == 'rk':
+            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn,\
+                                                        curr_I_nn, curr_beta, next_beta, dt, a)
+        if i % step_summation == 0:
+            I_exact=I[:,i+1]
+            I_exact.shape = (I_exact.shape[0], 1)
+            summation.append( tf.reduce_sum( ( tf.abs( next_I_nn - I_exact ) ) ))
+        curr_beta = next_beta
+        curr_S_nn = next_S_nn
+        curr_I_nn = next_I_nn
+    return tf.reduce_sum(summation)
+
+def train_step(K, dataset, I):
     with tf.GradientTape() as tape:
-        loss = custom_loss(K, dataset)
+        loss = custom_loss(K, dataset, I)
     trainable_variables=list(weights.values())+list(biases.values())
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
@@ -247,13 +277,13 @@ if args.train:
     
     try:
         for i in range(training_steps):
-          train_step(K, dataset)
+          train_step(K, dataset, I)
           if i % display_step == 0:
             print("iterazione %i:" % i)
-            loss_history[i_history] = custom_loss(K, dataset)
+            loss_history[i_history] = custom_loss(K, dataset, I)
             print("loss on training set: %f " % loss_history[i_history])
             if args.validate:
-                loss_history_val[i_history] = custom_loss(K_val, val_set)
+                loss_history_val[i_history] = custom_loss(K_val, val_set, I_val)
                 print("loss on validation set: %f" % loss_history_val[i_history])
             i_history = i_history + 1
     except KeyboardInterrupt:
@@ -300,14 +330,20 @@ for p in range(n_plots):
     
     for i in range(N-1):
         if not args.load_temp:
-            curr_temp = T(t[i])
+            curr_temp = np.array([T(t[i])], dtype='float64')
         else: # se le temperature sono state caricate non viene usata la T generata casualmente
-            curr_temp = test_set[0, p, i]
-        next_y = curr_y + dt*g(curr_y, curr_temp)
+            curr_temp = np.array([test_set[0, p, i]], dtype='float64')
+            curr_betaeq = np.array([test_set[2, p, i]], dtype='float64')
+        next_y = curr_y + t_max * dt*g(curr_y/b_ref, curr_temp/b_ref)
         y_nn[i+1] = next_y.numpy()[0][0]
-        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_temp)
-        next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-        next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
+        y_real[i+1] = y_real[i] + dt*f(y_real[i], curr_betaeq)
+        # viene usato runge kutta oppure eulero in avanti per calcolare uno step della soluzione
+        if solver == 'rk':
+            next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
+                                                        curr_y, next_y, dt, a)
+        if solver == 'ea':
+            next_S_nn = curr_S_nn - t_max*dt*curr_y*curr_S_nn*curr_I_nn
+            next_I_nn = curr_I_nn + t_max*dt*curr_y*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
         I_nn[i+1] = next_I_nn.numpy()[0][0] 
         curr_y = next_y
         curr_S_nn = next_S_nn
@@ -320,12 +356,28 @@ for p in range(n_plots):
         plt.plot(t, y_nn)
         plt.legend(["soluzione reale", "soluzione rete"])
         plt.title('beta, con test set {}'.format(p+1))
+        if len(args.save_plots) > 0:
+            print("Saving the plots in " + args.save_plots + "...\n")
+            path = "./" + args.save_plots;
+            if not os.path.exists(path):
+                os.mkdir(path)
+            filepath11 = path + "/betatest" + str(p + 1) + ".png";
+            plt.savefig(fname=filepath11)
+        # plt.close()
         plt.show()
         # plot delle I
         plt.plot(t, I_real)
         plt.plot(t, I_nn)
         plt.legend(["soluzione reale", "soluzione rete"])
         plt.title('infetti, con test set {}'.format(p+1))
+        if len(args.save_plots) > 0:
+            print("Saving the plots in " + args.save_plots + "...\n")
+            path = "./" + args.save_plots;
+            if not os.path.exists(path):
+                os.mkdir(path)
+            filepath22 = path + "/infettitest" + str(p + 1) + ".png";
+            plt.savefig(fname=filepath22)
+        # plt.close()
         plt.show()
     
     
@@ -346,14 +398,20 @@ if args.plot_train:
         curr_S_nn = tf.constant([[S0]], dtype = 'float64')
         # vengono calcolate le I e i beta
         for i in range(N-1):
-            next_y = curr_y + dt*g(curr_y, dataset[0, k, i])
+            T_curr = np.array([dataset[0, k, i]], dtype='float64')
+            betaeq_curr = np.array([dataset[2, k, i]], dtype='float64')
+            next_y = curr_y + t_max*dt*g(curr_y/b_ref, T_curr/b_ref)
             y_nn[i+1] = next_y.numpy()[0][0]
-            next_S_nn = curr_S_nn - dt*tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))
-            next_I_nn = curr_I_nn + dt*(tf.matmul(curr_y, tf.matmul(curr_S_nn, curr_I_nn))) - dt*a*curr_I_nn
-            I_nn[i+1] = next_I_nn.numpy()[0][0] 
+            if solver == 'rk':
+                next_S_nn, next_I_nn = shf.runge_kutta_step(curr_S_nn, curr_I_nn, \
+                                                            curr_y, next_y, dt, a)
+            if solver == 'ea':
+                next_S_nn = curr_S_nn - t_max*dt*curr_y*curr_S_nn*curr_I_nn
+                next_I_nn = curr_I_nn + t_max*dt*curr_y*curr_S_nn*curr_I_nn - t_max*dt*a*curr_I_nn
             curr_y = next_y
             curr_S_nn = next_S_nn
             curr_I_nn = next_I_nn
+            I_nn[i+1] = next_I_nn.numpy()[0][0]
         if k % 5 == 0:
             # viene calcolata la I_real
             s, I_real, r = hrk.RungeKutta(sir_0, dataset[1, k, :], N, t_max, a)
@@ -362,12 +420,34 @@ if args.plot_train:
             plt.plot(t, y_nn)
             plt.legend(["soluzione reale", "soluzione rete"])
             plt.title('beta, con training set {}'.format(k+1))
+            if len(args.save_plots) > 0:
+                print("Saving the plots in " + args.save_plots + "...\n")
+                path = "./" + args.save_plots;
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                filepath1 = path + "/betatrain" + str(k+1) + ".png";
+                plt.savefig(fname=filepath1)
+            # plt.close()
+            # if args.save_plots:
+            #     filepath1 = "saved-plots/beta" + str(k) + ".png";
+            #     plt.savefig(fname=filepath1)
             plt.show()
             # plot delle I
             plt.plot(t, I_real)
             plt.plot(t, I_nn)
             plt.legend(["soluzione reale", "soluzione rete"])
             plt.title('infetti, con training set {}'.format(k+1))
+            if len(args.save_plots) > 0:
+                print("Saving the plots in " + args.save_plots + "...\n")
+                path = "./" + args.save_plots;
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                filepath2 = path + "/infettitrain" + str(k+1) + ".png";
+                plt.savefig(fname=filepath2)
+            # plt.close()
+            # if args.save_plots:
+            #     filepath2 = "saved-plots/infetti" + str(k) + ".png";
+            #     plt.savefig(fname=filepath2)
             plt.show()
 
 # plot della loss
@@ -377,6 +457,14 @@ plt.plot(it, loss_history)
 plt.plot(it, loss_history_val)
 plt.legend(["loss training set", "loss validation set"])
 plt.title('evoluzione della loss')
+if len(args.save_plots) > 0:
+    print("Saving the loss plot in " + args.save_plots + "...\n")
+    path = "./" + args.save_plots;
+    if not os.path.exists(path):
+        os.mkdir(path)
+    filepath3 = path + "/lossevolution" + ".png";
+    plt.savefig(fname=filepath3)
+# plt.close()
 plt.show()
 
 

@@ -114,4 +114,325 @@ R0: 0.0
 n_hidden: 15
 loss con TOT
 
+In prova220_1:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 800.0
+I0: 100.0
+R0: 0.0
+n_hidden: 60
+solver: ea
+Plot terribili, 1200 iterazioni
+iterazione 0:
+loss on training set: 19.490758 
+loss on validation set: 15.582750
+iterazione 1200:
+loss on training set: 0.062235 
+loss on validation set: 0.066565
 
+in prova150_1.pkl:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 80.0
+I0: 5.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 11.337479 
+loss on validation set: 12.291323
+iterazione 1490:
+loss on training set: 0.019859 
+loss on validation set: 0.019214
+plot decenti ma non perfetti (da caricare)
+
+In prova150_2 1000 iterazioni (ottimi risultati!):
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 80.0
+I0: 5.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 1.156047 
+loss on validation set: 0.464158
+iterazione 1000:
+loss on training set: 0.003708 
+loss on validation set: 0.003184
+
+in prova220_2.pkl 600 iterazioni (brutti grafici)
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 20.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+iterazione 0:
+loss on training set: 2.165593 
+loss on validation set: 1.781973
+iterazione 650:
+loss on training set: 0.015838 
+loss on validation set: 0.015575
+
+In prova220_3: 1170 iterazioni 
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 800.0
+I0: 40.0
+R0: 0.0
+n_hidden: 100
+solver: ea
+
+iterazione 0:
+loss on training set: 1.083675 
+loss on validation set: 0.942303
+iterazione 1170:
+loss on training set: 0.017112 
+loss on validation set: 0.016883
+Niente overfitting, plot solo qualitativamente decenti
+
+In prova220_3_parte2: 
+è ripreso il training di prova220_3, con altre 500 iterazioni:
+iterazione 0:
+loss on training set: 0.017054 
+loss on validation set: 0.017093
+iterazione 500:
+loss on training set: 0.005232 
+loss on validation set: 0.004926
+I plot sono forse leggermente migliori.
+altre 560 iterazioni: 
+iterazione 0:
+loss on training set: 0.005273 
+loss on validation set: 0.004926
+iterazione 560:
+loss on training set: 0.001382 
+loss on validation set: 0.001189
+
+in prova220_4: 1000 iterazioni
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 800.0
+I0: 40.0
+R0: 0.0
+n_hidden: 100
+solver: ea
+iterazione 0:
+loss on training set: 0.117918 
+loss on validation set: 0.122239
+iterazione 1150:
+loss on training set: 0.001291 
+loss on validation set: 0.001095
+
+In prova220_5:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 400.0
+I0: 20.0
+R0: 0.0
+n_hidden: 30
+solver: ea
+1500 iterazioni, grafici molto brutti
+iterazione 0:
+loss on training set: 10.405801 
+loss on validation set: 10.041238
+iterazione 1490:
+loss on training set: 0.137180 
+loss on validation set: 0.050613
+
+in prova220_6: 
+step_summation: 1
+learning_rate: 0.0025
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 600.0
+I0: 3.0
+R0: 0.0
+n_hidden: 60
+solver: ea
+500 iterazioni, grafici molto brutti
+iterazione 0:
+loss on training set: 2.077431 
+loss on validation set: 1.562144
+iterazione 530:
+loss on training set: 0.028760 
+loss on validation set: 0.029600
+
+in prova150_3:
+step_summation: 1
+learning_rate: 0.0025
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 400.0 
+I0: 100.0
+R0: 0.0
+n_hidden: 60
+solver: ea
+800 iterazioni, grafici ottimi!  (da caricare)
+iterazione 0:
+loss on training set: 11.546045 
+loss on validation set: 10.488994
+iterazione 270:
+loss on training set: 0.100027 
+loss on validation set: 0.106530
+iterazione 0:
+loss on training set: 0.095123 
+loss on validation set: 0.097550
+iterazione 540:
+loss on training set: 0.006910 
+loss on validation set: 0.007397
+
+da prova220_8 a prova220_  : stessi dati, sempre 500 iterazioni, ma con neuroni aumentati.
+prova220_8: (pessimi grafici)
+step_summation: 1
+learning_rate: 0.0025
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 220
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 800.0 
+I0: 100.0
+R0: 0.0
+n_hidden: 60
+solver: ea
+iterazione 0:
+loss on training set: 0.889069 
+loss on validation set: 0.808266
+iterazione 520:
+loss on training set: 0.028088 
+loss on validation set: 0.025989
+
+prova220_9: 5 neuroni (pessimi grafici)
+prova220_10: 100 neuroni (grafici qualitativamente decenti)
+prove220_12: 150 neuroni. (grafici qualitativamente decenti)
+
+
+in prova150_4:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 150
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 80.0
+I0: 5.0
+R0: 0.0
+n_hidden: 15
+solver: ea
+provo a diminuire i neuroni da 30 a 15 con 1000 iterazioni per vedere
+430 + 860 iterazioni: buon risultato. provo a diminuire ancora
+prova150_5: neuroni: 7. Grafici forse peggio di prima
+prova150_6: 4. Grafici pessimi
+
+Ora provo con i dati:
+step_summation: 1
+learning_rate: 0.005
+t_max: 1.0
+beta0: 0.05
+K: 40
+K_val: 20
+N: 60
+alpha: 3.0
+training_steps: 1500
+display_step: 10
+temperature_type: exp
+S0: 10
+I0: 0.5
+R0: 0.0
+n_hidden: 30
+solver: ea
+
+Il grafico è praticamente perfetto. Ora provo a diminuire i neuroni:
+
+prova60_1.pkl: 20 neuroni: ottimi grafici
+prova60_2.pkl: 10 neuroni: ancora ottimi
+prova60_3.pkl: 5 neuroni: ancora ottimi
+prova60_4.pkl: 1 neurone: ancora ottimi grafici
