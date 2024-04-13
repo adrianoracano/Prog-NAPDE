@@ -12,7 +12,7 @@ import converti_ngiorni_data as cgd
 import matplotlib.animation as animation
 
 ###caricamento del dataset real===================================
-path_i = "COVID-19/dati-regioni"
+path_i = "../dati-regioni"
 n_mesi = 18
 n_giorni = math.floor(n_mesi * 30)
 n_timesteps = 30 * n_mesi #ora n_timestep può essere scelto grande a piacere

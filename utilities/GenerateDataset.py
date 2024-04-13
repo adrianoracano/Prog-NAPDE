@@ -1,9 +1,3 @@
-
-"""
-Created on Fri Jun 30 10:30:05 2023
-
-@author: alean
-"""
 import math
 import random
 from utilities import MyTemperatureGenerator as tg

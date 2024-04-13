@@ -4,8 +4,8 @@ import math
 import numpy as np
 from scipy.interpolate import make_interp_spline
 from utilities import SirHelperFunctions as shr
-import converti_ngiorni_data as cgd
-
+from utilities import converti_ngiorni_data as cgd
+from matplotlib import pyplot as pltS
 reg_list = ['Abruzzo',
      'Basilicata',
      'Calabria',
@@ -70,7 +70,6 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     if overlap > n_giorni or n_giorni > max_days or overlap > max_days:
         raise("Incompatible sizes") """
     
-    
     start = cgd.data_a_ngiorni(start_date)
     end = start + (K) * (n_giorni - overlap) 
     end_date = cgd.ngiorni_a_data(end)
@@ -87,13 +86,14 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         count += 1
     print(str(count) + " intervals can be generated") """
 
+
     if n_timesteps == None:
         n_timesteps = max(n_giorni*2, 100)
     
     infetti, beta_log = exi.extract_infects(path_i, n_timesteps, start_date, n_mesi, regions)
     rimossi =  exr.extract_removed(path_i, n_timesteps, start_date, n_mesi, regions)
     start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_date) + n_giorni - overlap)
-
+    date = [start_new]
     #vecchia parte con max_months commentata
     """ 
     for i in range(count - 1):
@@ -104,15 +104,16 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         rimossi_new =  exr.extract_removed(path_i, n_timesteps, start_new, n_mesi, regions)
         rimossi = np.concatenate((rimossi, rimossi_new), axis = 0) """
 
-    
     for i in range(K - 1):
         start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_new) + n_giorni - overlap)
+        print(start_new)
+        date.append(start_new)
         infetti_new, beta_log_new = exi.extract_infects(path_i, n_timesteps, start_new, n_mesi, regions)
         infetti = np.concatenate((infetti, infetti_new), axis = 0)
         beta_log = np.concatenate((beta_log, beta_log_new), axis = 0)
         rimossi_new =  exr.extract_removed(path_i, n_timesteps, start_new, n_mesi, regions)
         rimossi = np.concatenate((rimossi, rimossi_new), axis = 0)
-      
+
     #smoothing infetti ===============================================
     """ 
     smooth = False
@@ -126,7 +127,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         spline_indices = np.linspace(0, I_vec.shape[1] - 1, n_timesteps + 1)
         inf_spline = np.zeros(shape=(I_vec.shape[0], n_timesteps + 1))
  """
-    #beta sintetico ==================================================
+    # beta sintetico =================================================
     use_positive = True #per tagliare beta_log negativo
     if use_positive:
         beta_log = beta_log.clip(min = 0)
@@ -134,7 +135,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     use_up_bound = True
     if use_up_bound:
         beta_log = beta_log.clip(max = up_bound)
-    K_b = 1 / 3 # percentule di timestep per interpolare beta, regola lo smoothing di beta
+    K_b = 1 / 3 # percentuale di timestep per interpolare beta, regola lo smoothing di beta
     n_interp_points = math.floor((n_timesteps) * K_b)
     new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
     beta_log_interp = np.zeros(shape=(beta_log.shape[0], n_interp_points))
@@ -177,8 +178,11 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     beta_spline.clip(min = 0) 
     K_b2 = 1 / 5 # per smoothare la parte = 0
     n_interp_points = math.floor((n_timesteps) * K_b2)
+    beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
     new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
     for i in range(beta_log.shape[0]):
+        beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
+        spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
         beta_spline[i, :] = spline(spline_indices)
 
     #generazione degli infetti tramite il SIR=========================
@@ -203,7 +207,136 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
         beta_spline = np.delete(beta_spline, random_id, axis = 0)
       """
 
-    return beta_spline, infetti_SIR #, beta_spline_val, infetti_SIR_val
+    return beta_spline, infetti_SIR, date #, beta_spline_val, infetti_SIR_val
 
+#nuova versione che estrae tutta la sequenza di infetti e la suddivide negli intervalli
+def generate_beta_arrays_2(path_i, K, n_giorni, overlap, start_date  = '15/03/2020', n_timesteps_per_interval = None, regions = reg_list):
+    n_mesi = n_giorni / 30 
+    reg_list = ['Abruzzo',
+     'Basilicata',
+     'Calabria',
+     'Campania',
+     'Emilia-Romagna',
+     'Friuli Venezia Giulia',
+     'Lazio',
+     'Liguria',
+     'Lombardia',
+     'Marche',
+     'Piemonte',
+     'Puglia',
+     'Sardegna',
+     'Sicilia',
+     'Toscana',
+     'Umbria',
+     'Veneto',
+     'P.A. Bolzano',
+     'P.A. Trento']
+    
+    start = cgd.data_a_ngiorni(start_date)
+    end = start + (K) * (n_giorni - overlap) 
+    end_date = cgd.ngiorni_a_data(end)
+    if end > cgd.data_a_ngiorni("15/09/2021"):
+        raise ValueError('Too many intervals')
+
+    if n_timesteps_per_interval == None:
+        n_timesteps_per_interval = max((n_giorni - overlap) * 2, 100)
+
+    n_timesteps_per_overlap = math.floor(n_timesteps_per_interval * overlap / n_giorni)
+    n_timesteps = (n_timesteps_per_interval - n_timesteps_per_overlap) * K + n_timesteps_per_overlap
+    n_mesi_tot = ((n_giorni - overlap) * K + overlap) / 365 * 12
+    infetti_full, beta_log_full = exi.extract_infects(path_i, n_timesteps, start_date, n_mesi_tot, regions)
+    rimossi_full =  exr.extract_removed(path_i, n_timesteps, start_date, n_mesi_tot, regions)
+
+    #first iteration outside the loop
+    start = 0
+    end = n_timesteps_per_interval
+    infetti = infetti_full[0, start : end].reshape(1,n_timesteps_per_interval)
+    rimossi = rimossi_full[0, start : end].reshape(1,n_timesteps_per_interval)
+    beta_log = beta_log_full[0, start : end].reshape(1,n_timesteps_per_interval)
+    start = end - n_timesteps_per_overlap
+    end = start + n_timesteps_per_interval 
+
+    #first iteration outside the loop
+    start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_date) + n_giorni - overlap)
+    date = [start_new]
+
+    for i in range(K - 1):            
+        start_new = cgd.ngiorni_a_data(cgd.data_a_ngiorni(start_new) + n_giorni - overlap)
+        print(start_new)
+        date.append(start_new)
+        infetti = np.concatenate((infetti, infetti_full[0, start : end].reshape(1,n_timesteps_per_interval)), axis = 0)
+        beta_log = np.concatenate((beta_log, beta_log_full[0, start : end].reshape(1,n_timesteps_per_interval)), axis = 0)
+        rimossi = np.concatenate((rimossi, rimossi_full[0, start : end].reshape(1,n_timesteps_per_interval)), axis = 0)
+        start = end - n_timesteps_per_overlap
+        end = start + n_timesteps_per_interval 
+
+    # beta sintetico =================================================
+    use_positive = True #per tagliare beta_log negativo
+    if use_positive:
+        beta_log = beta_log.clip(min = 0)
+    up_bound = 20 #per tagliare beta sopra una soglia
+    use_up_bound = True
+    if use_up_bound:
+        beta_log = beta_log.clip(max = up_bound)
+    K_b = 1 / 3 # percentuale di timestep per interpolare beta, regola lo smoothing di beta
+    n_interp_points = math.floor((n_timesteps_per_interval) * K_b)
+    new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
+    beta_log_interp = np.zeros(shape=(beta_log.shape[0], n_interp_points))
+    spline_indices = np.linspace(0, beta_log.shape[1] - 1, n_timesteps_per_interval)
+    beta_spline = np.zeros(shape=(beta_log.shape[0], n_timesteps_per_interval))
+    # Interpolazione lineare (beta) lungo l'asse N per ogni riga 
+    for i in range(beta_log.shape[0]):
+        beta_log_interp[i, :] = np.interp(new_indices, np.arange(beta_log.shape[1]), beta_log[i, :])
+        spline = make_interp_spline(new_indices, beta_log_interp[i, :])
+        beta_spline[i, :] = spline(spline_indices)
+
+    #======================= AGGIUNTA RUMORE =========================   
+    #tensore delle medie
+    mean = np.mean(beta_spline, axis = 1)
+    mean = mean.reshape(beta_spline.shape[0], 1)
+    np.tile(mean, beta_spline.shape[1])
+    #tensore delle ampiezze
+    amp = np.max(np.absolute(beta_spline - mean), axis = 1)
+    amp = amp.reshape(beta_spline.shape[0], 1)
+    np.tile(amp, beta_spline.shape[1])
+    #vettore tempo
+    t = np.arange(beta_spline.shape[1])/beta_spline.shape[1] * n_giorni
+    #aggiunta di rumore
+    noise = 0
+    sin = np.vectorize(math.sin)
+    #rumore 1(frequenza alta, ampiezza bassa)
+    omega = 2 * math.pi / (n_giorni * 0.05)
+    vec = sin(omega * t)
+    vec = vec.reshape(1, beta_spline.shape[1])
+    np.tile(vec, beta_spline.shape[1])
+    noise = noise + 0.1* amp * vec
+    #rumore 2(frequenza bassa, ampiezza alta)
+    vec2 = sin(omega/5 * t)
+    vec2 = vec2.reshape(1, beta_spline.shape[1])
+    np.tile(vec2, beta_spline.shape[1])
+    noise = noise + 0.2 * amp * vec2
+    beta_spline = beta_spline + noise
+
+    #rimozione parti negative e resmoothing
+    beta_spline.clip(min = 0) 
+    K_b2 = 1 / 5 # per smoothare la parte = 0
+    n_interp_points = math.floor((n_timesteps_per_interval) * K_b2)
+    beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
+    new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
+    for i in range(beta_log.shape[0]):
+        beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
+        spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
+        beta_spline[i, :] = spline(spline_indices)
+
+    #generazione degli infetti tramite il SIR=========================
+    R0 = rimossi[:,0]
+    I0 = infetti[:,0]
+    S0 = 1 - I0 - R0
+    sir0 = (S0, I0, R0)
+    alpha = 1.3
+    infetti_SIR = shr.compute_I([beta_spline], n_mesi, alpha, sir0)
+    infetti_SIR = infetti_SIR[0]
+
+    return beta_spline, infetti_SIR, date
 
 

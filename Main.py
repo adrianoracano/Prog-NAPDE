@@ -17,12 +17,13 @@ import random
 import math
 from matplotlib import pyplot as plt
 from srcs import plot_solutions
+import shutil
 tfk = tf.keras
 tfkl = tf.keras.layers
 tfkl.Normalization(dtype='float64')
 
 tf.keras.backend.set_floatx('float64')
-seed = 25
+seed = 29032024
 random.seed(seed)
 os.environ['PYTHONHASHSEED'] = str(seed)
 np.random.seed(seed)
@@ -75,6 +76,7 @@ n_hidden = int(data_dict['n_hidden'])
 display_weights = int(data_dict['display_weights'])
 dataset_name = data_dict['dataset']
 tau = float(data_dict['tau'])
+num_layers = int(data_dict['num_layers'])
 
 ##################
 # calcolo di b_ref
@@ -87,14 +89,18 @@ b_ref = alpha * math.log(S0/S_inf) / (1.0 - S_inf)
 ###########################
 # viene caricato il dataset
 ###########################
+n_giorni = None
+date_train = None
+date_val = None
 path_dataset = 'datasets/'+ dataset_name
 try:
     with open(path_dataset, 'rb') as file:
         if args.test_case:
             dataset,val_set,test_set,beta0_train,beta0_val,beta0_test = pickle.load(file)  # viene caricato il  dataset
-        elif args.beta_log: 
+        elif args.beta_log:
             # vengono presi gli infetti (ricostruiti col beta-log), il beta-log e le temperature (+ zone, ...)
-            I_train, I_val, dataset, val_set, beta_train, beta_val = pickle.load(file)
+            I_train, I_val, dataset, val_set, beta_train, beta_val, n_giorni, date_train, date_val = pickle.load(file)
+            t_max = n_giorni/30
         else:
             # Se si vogliono utilizzare dati reali vengono caricati gli infetti
             # e dati vari, come le temperature e i valori di beta0
@@ -112,13 +118,14 @@ print('data:\n')
 print('S0: ', S0, ', I0: ', I0, ', S_inf: ', S_inf)
 print('bet_ref: ', b_ref)
 print('K:', dataset.shape[0], ', K_val:', val_set.shape[0])
-print('t_max: ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
-print('hidden neurons: ', n_hidden, '\n')
+print('t_max (in mesi) : ', t_max, ', N: ', dataset.shape[1], 'dt: ', round(1/dataset.shape[1], 6) )
+print('layers: ', num_layers)
+print('hidden neurons per layer: ', n_hidden, '\n')
 
 # se si vuole fare il training su dati sintetici bisogna calcolare i beta e 
 # gli infetti:
 
-if args.test_case:
+if args.test_case and not args.beta_log:
     #################################
     # vengono calcolati i beta esatti
     #################################
@@ -144,7 +151,8 @@ addDropout = False
 model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
                    addDropout = False ,addBNorm = addDropout, \
                    load_path = args.load_model,
-                         use_keras = use_keras)
+                         use_keras = use_keras,
+                         numLayers = num_layers)
 
 network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
@@ -159,42 +167,46 @@ if args.train:
                                              beta0_train, beta0_val, \
                                              training_steps, display_weights, validate = True)
 
+save_folder = str(model.numLayers) + 'x' + str(model.n_hidden) + 'neu_' + str(model.n_iter) + 'iter_' + dataset_name[:-4]
+saved_model_path = args.save_model + '/' + save_folder
 
 if len(args.save_model)>0:
-    model.save_model(args.save_model)
+    model.save_model(saved_model_path)
 
 b_train_nn, I_train_nn = network.compute_beta_I(dataset, I_train[:, 0], beta0_train)
 b_val_nn, I_val_nn = network.compute_beta_I(val_set, I_val[:, 0], beta0_val)
 if args.test_case:
     b_test_nn, I_test_nn = network.compute_beta_I(test_set, I_test[:, 0], beta0_test)
 
-
-
 ########################
 # plot di beta e infetti
 ########################
 
-# se è un test case allora si conoscono anche i beta esatti che quindi vengono 
+saved_plots_path = ''
+if len(args.save_plots) > 0:
+    saved_plots_path = args.save_plots + '/' + save_folder
+
+# se è un test case allora si conoscono anche i beta esatti che quindi vengono
 # plottati
 
 got_beta_for_plot = args.test_case or args.beta_log
 
 if args.plot_train and got_beta_for_plot:
-    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
-                           "train", 1)
-    
+    plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
+                                 "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_train)
 if args.plot_test and got_beta_for_plot:
-    plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
-                           "test", 1)
+    plot_solutions.plot_beta_I_2(I_val_nn, b_val_nn, I_val, beta_val, \
+                                 "val", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_val)
 # se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete
 
 if args.plot_train and not got_beta_for_plot:
-    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, set_type='train', plot_display = 1, save_plots = args.save_plots)
+    plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
+                                 "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 if args.plot_test and not got_beta_for_plot:
-    plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, set_type='val', plot_display = 1, save_plots = args.save_plots)
-
+    plot_solutions.plot_beta_I_2(I_test_nn, b_test_nn, I_test, beta_test, \
+                                 "test", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 #################
 # plot della loss
 #################
@@ -204,19 +216,40 @@ if args.train:
     plt.plot(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
     plt.title("loss evolution")
-    plt.show()
+    if len(args.save_plots) > 0:
+        print("Saving the loss plot in " + saved_plots_path + "...\n")
+        path = "./" + saved_plots_path;
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filepath2 = path + "/loss_plot.png";
+        plt.savefig(fname=filepath2)
+    #plt.show()
+    plt.close()
     plt.semilogy(display_step*np.arange(0, it), loss_train[0:it])
     plt.semilogy(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
     plt.title("loss evolution (semilog scale)")
     if len(args.save_plots) > 0:
-        print("Saving the loss plot in " + args.save_plots + "...\n")
-        path = "./" + args.save_plots;
+        print("Saving the loss plot in " + saved_plots_path + "...\n")
+        path = "./" + saved_plots_path;
         if not os.path.exists(path):
-            os.mkdir(path)
-        filepath2 = path + "/loss_plot.png";
+            os.makedirs(path)
+        filepath2 = path + "/loss_plot_semilog.png";
         plt.savefig(fname=filepath2)
-    plt.show()
+    #plt.show()
+    plt.close()
+
+
+if len(args.save_plots) > 0:
+    shutil.copy('data.txt', saved_plots_path)
+    shutil.copy('utilities\data-for-GenerateDataset.txt', saved_plots_path)
+    print('saved data')
+
+if len(args.save_model) > 0:
+    shutil.copy('data.txt', saved_model_path)
+    shutil.copy('utilities\data-for-GenerateDataset.txt', saved_model_path)
+    print('saved data')
+
     
 
 
