@@ -12,7 +12,7 @@ import converti_ngiorni_data as cgd
 import matplotlib.animation as animation
 
 ###caricamento del dataset real===================================
-path_i = "../dati-regioni"
+path_i = "COVID-19/dati-regioni"
 n_mesi = 18
 n_giorni = math.floor(n_mesi * 30)
 n_timesteps = 30 * n_mesi #ora n_timestep può essere scelto grande a piacere
@@ -82,6 +82,18 @@ vec2 = vec2.reshape(1, beta_spline.shape[1])
 np.tile(vec2, beta_spline.shape[1])
 noise = noise + 0.15 * amp * vec2
 beta_spline = beta_spline + noise
+
+#rimozione parti negative e resmoothing
+beta_spline = beta_spline.clip(min = 0)
+K_b2 = 1 / 8 # per smoothare la parte = 0
+n_interp_points = math.floor(n_timesteps * K_b2)
+beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
+new_indices = np.linspace(0, beta_log.shape[1], n_interp_points)
+for i in range(beta_log.shape[0]):
+    beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
+    spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
+    beta_spline[i, :] = spline(spline_indices)
+
 
 #generazione degli infetti tramite il SIR=========================
 R0 = rimossi[:,0]

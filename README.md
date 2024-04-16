@@ -62,7 +62,7 @@ Per il training si possono utilizzare le possibili opzioni:
 --save-model nome_rete : viene salvato il modello come 'nome_rete'
 
 
-Per eseguire i training utilizzando il modello basato sui beta-log:
+Per eseguire i training utilizzando il modello basato sui beta-log (bisogna avere clonata la repository del DPC :https://github.com/pcm-dpc/COVID-19.git):
 1) eseguire lo script GenerateDataset_BetaLog.py dentro cui modificare le variabili:
 
 n_timesteps = ...
@@ -77,8 +77,8 @@ nome_file = ...
 use_zone = ...
 
 dove:
-* 'path_i' è il percorso del file contenente le osservazioni sugli infetti
-* 'path_t' è il percorso del file contenente le osservazioni sulle temperature
+* 'path_i' è il percorso del file contenente le osservazioni sugli infetti (cartella 'dati-regioni' della repository del DPC)
+* 'path_t' è il percorso del file contenente le osservazioni sulle temperature ('.\Temperature')
 * 'regione_beta': una list contenente le regioni di interesse da cui estrarre gli infetti (e.g.: regione_temp = ['Lombardia'])
 * 'regione_beta': una list contenente le città di interesse da cui estrarre le temperature (e.g.: regione_temp = ['Milano'])
 * 'K' la dimensione del training set

@@ -175,7 +175,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     beta_spline = beta_spline + noise
 
     #rimozione parti negative e resmoothing
-    beta_spline.clip(min = 0) 
+    beta_spline = beta_spline.clip(min = 0)
     K_b2 = 1 / 5 # per smoothare la parte = 0
     n_interp_points = math.floor((n_timesteps) * K_b2)
     beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
@@ -183,7 +183,7 @@ def generate_beta_arrays(path_i, K, n_giorni, overlap, start_date  = '15/03/2020
     for i in range(beta_log.shape[0]):
         beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
         spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
-        beta_spline[i, :] = spline(spline_indices)
+        beta_spline[i, :] = spline(new_indices)
 
     #generazione degli infetti tramite il SIR=========================
     R0 = rimossi[:,0]
@@ -318,7 +318,7 @@ def generate_beta_arrays_2(path_i, K, n_giorni, overlap, start_date  = '15/03/20
     beta_spline = beta_spline + noise
 
     #rimozione parti negative e resmoothing
-    beta_spline.clip(min = 0) 
+    beta_spline = beta_spline.clip(min = 0)
     K_b2 = 1 / 5 # per smoothare la parte = 0
     n_interp_points = math.floor((n_timesteps_per_interval) * K_b2)
     beta_spline_interp = np.zeros(shape=(beta_spline.shape[0], n_interp_points))
@@ -326,7 +326,7 @@ def generate_beta_arrays_2(path_i, K, n_giorni, overlap, start_date  = '15/03/20
     for i in range(beta_log.shape[0]):
         beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
         spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
-        beta_spline[i, :] = spline(spline_indices)
+        beta_spline[i, :] = spline(new_indices)
 
     #generazione degli infetti tramite il SIR=========================
     R0 = rimossi[:,0]
