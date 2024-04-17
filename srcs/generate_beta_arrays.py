@@ -326,7 +326,7 @@ def generate_beta_arrays_2(path_i, K, n_giorni, overlap, start_date  = '15/03/20
     for i in range(beta_log.shape[0]):
         beta_spline_interp[i, :] = np.interp(new_indices, np.arange(beta_spline.shape[1]), beta_spline[i, :])
         spline = make_interp_spline(new_indices, beta_spline_interp[i, :])
-        beta_spline[i, :] = spline(new_indices)
+        beta_spline[i, :] = spline(spline_indices)
 
     #generazione degli infetti tramite il SIR=========================
     R0 = rimossi[:,0]
