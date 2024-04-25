@@ -148,11 +148,16 @@ else:
 use_keras = False
 addDropout = False
 
+#use_TensorBoard = False
+#tf.summary.trace_on(graph=True, profiler=True)
+
 model = ModelClass.Model(n_input, n_hidden, learning_rate, b_ref, \
                    addDropout = False ,addBNorm = addDropout, \
                    load_path = args.load_model,
                          use_keras = use_keras,
-                         numLayers = num_layers)
+                         numLayers = num_layers
+                         #,use_TensorBoard=use_TensorBoard
+                         )
 
 network = ModelClass.NetworkForSIR(model, display_step, t_max, alpha)
 
@@ -189,23 +194,33 @@ if len(args.save_plots) > 0:
 # se è un test case allora si conoscono anche i beta esatti che quindi vengono
 # plottati
 
-got_beta_for_plot = args.test_case or args.beta_log
+got_beta_for_plot = args.test_case or args.beta_log #test case e beta log non devono essere messi insieme
 
-if args.plot_train and got_beta_for_plot:
-    plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
-                                 "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_train)
-if args.plot_test and got_beta_for_plot:
-    plot_solutions.plot_beta_I_2(I_val_nn, b_val_nn, I_val, beta_val, \
-                                 "val", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_val)
-# se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono 
+if args.beta_log:
+    if args.plot_train:
+        plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
+                                     "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_train)
+    if args.plot_test:
+        plot_solutions.plot_beta_I_2(I_val_nn, b_val_nn, I_val, beta_val, \
+                                     "val", 1, save_plots=saved_plots_path, n_giorni = n_giorni, date = date_val)
+
+if args.test_case:
+    if args.plot_train:
+        plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
+                                     "train", 1, save_plots=saved_plots_path)
+    if args.plot_test:
+        plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, beta_val, \
+                                     "val", 1, save_plots=saved_plots_path)
+
+# se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono
 # fatti i plot solo degli infetti reali, degli infetti calcolati dalla rete, e
 # dei beta calcolati dalla rete
 
 if args.plot_train and not got_beta_for_plot:
-    plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
+    plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
                                  "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 if args.plot_test and not got_beta_for_plot:
-    plot_solutions.plot_beta_I_2(I_test_nn, b_test_nn, I_test, beta_test, \
+    plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
                                  "test", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
 #################
 # plot della loss
