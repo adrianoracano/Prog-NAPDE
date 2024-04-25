@@ -218,10 +218,10 @@ if args.test_case:
 
 if args.plot_train and not got_beta_for_plot:
     plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
-                                 "train", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
+                                 "train", 1, save_plots=saved_plots_path)
 if args.plot_test and not got_beta_for_plot:
     plot_solutions.plot_beta_I(I_test_nn, b_test_nn, I_test, beta_test, \
-                                 "test", 1, save_plots=saved_plots_path, n_giorni = n_giorni)
+                                 "test", 1, save_plots=saved_plots_path)
 #################
 # plot della loss
 #################
