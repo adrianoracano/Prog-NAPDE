@@ -30,10 +30,10 @@ np.random.seed(seed)
 tf.random.set_seed(seed)
 tf.compat.v1.set_random_seed(seed)
 
-
 #######
 # flags
 #######
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--train', help='train the network', action='store_true')
 parser.add_argument('-i', '--iterations', help='override the number of iterations', type=int, default=0)
@@ -49,7 +49,6 @@ parser.add_argument('-sp', '--save-plots', help='save the plots in the specified
 parser.add_argument('-sm', '--save-model', help='save the model file in the specified directory after the training', default='')
 parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
 parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='store_true', default = False)
-
 
 args = parser.parse_args()
 
@@ -83,8 +82,6 @@ num_layers = int(data_dict['num_layers'])
 ##################
 
 b_ref = alpha * math.log(S0/S_inf) / (1.0 - S_inf)
-
-
 
 ###########################
 # viene caricato il dataset
@@ -206,10 +203,10 @@ if args.beta_log:
 
 if args.test_case:
     if args.plot_train:
-        plot_solutions.plot_beta_I(I_train_nn, b_train_nn, I_train, beta_train, \
+        plot_solutions.plot_beta_I_2(I_train_nn, b_train_nn, I_train, beta_train, \
                                      "train", 1, save_plots=saved_plots_path)
     if args.plot_test:
-        plot_solutions.plot_beta_I(I_val_nn, b_val_nn, I_val, beta_val, \
+        plot_solutions.plot_beta_I_2(I_val_nn, b_val_nn, I_val, beta_val, \
                                      "val", 1, save_plots=saved_plots_path)
 
 # se si utilizzano dati reali i beta esatti sono sconosciuti, quindi vengono
@@ -227,6 +224,7 @@ if args.plot_test and not got_beta_for_plot:
 #################
 
 if args.train:
+    plt.figure()
     plt.plot(display_step*np.arange(0, it), loss_train[0:it])
     plt.plot(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
@@ -238,8 +236,8 @@ if args.train:
             os.makedirs(path)
         filepath2 = path + "/loss_plot.png";
         plt.savefig(fname=filepath2)
-    #plt.show()
-    plt.close()
+
+    plt.figure()
     plt.semilogy(display_step*np.arange(0, it), loss_train[0:it])
     plt.semilogy(display_step*np.arange(0, it), loss_val[0:it])
     plt.legend(["loss train", "loss val"])
