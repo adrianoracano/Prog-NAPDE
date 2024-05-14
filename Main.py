@@ -23,14 +23,7 @@ import time
 tfk = tf.keras
 tfkl = tf.keras.layers
 tfkl.Normalization(dtype='float64')
-
 tf.keras.backend.set_floatx('float64')
-seed = 29032024
-random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
-np.random.seed(seed)
-tf.random.set_seed(seed)
-tf.compat.v1.set_random_seed(seed)
 
 #######
 # flags
@@ -52,8 +45,25 @@ parser.add_argument('-sm', '--save-model', help='save the model file in the spec
 parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
 parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='store_true', default = False)
 parser.add_argument('-tm', '--time', help='track and save the CPU time required for the training', action='store_true')
+parser.add_argument('-ss', '--set-seed', help='set the seed', type = int, default = 0)
 
 args = parser.parse_args()
+
+##########################
+# seed for reproducibility
+##########################
+
+tf.keras.backend.set_floatx('float64')
+if args.set_seed != 0:
+    seed = args.set_seed
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
+    tf.compat.v1.set_random_seed(seed)
+
+
+    print("seed set to ", seed, "\n\n")
 
 ###################
 # dati del problema
