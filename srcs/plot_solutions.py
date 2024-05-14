@@ -5,6 +5,31 @@ import os
 import math
 import matplotlib
 import matplotlib.lines as mlines
+import matplotlib.ticker as mticker
+from matplotlib.ticker import FuncFormatter
+
+plt.rcParams['axes.formatter.limits'] = (-1000, 1000)
+plt.rcParams['axes.formatter.use_mathtext'] = False
+plt.rcParams['axes.formatter.use_locale'] = False
+plt.rcParams['axes.formatter.min_exponent'] = 0
+
+def my_formatter(x, pos):
+    if x.is_integer():
+        return str(int(x))
+    else:
+        return str(x)
+
+formatter = FuncFormatter(my_formatter)
+
+class HideZerosFormatter(mticker.EngFormatter):
+    def __init__(self, unit='', places=3):
+        super().__init__(unit=unit, places=places)
+
+    def _eng_str(self, value, _):
+        if value == 0:
+            return '0'
+        else:
+            return super()._eng_str(value, _)
 
 plt.rcParams['font.family'] = 'Arial'
 linewidth = 2
@@ -97,6 +122,8 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 ax[2*i , j].plot(t, beta_nn[k + j + i * cols, :], linestyle = linestyle_beta, label = 'predicted ' + beta_str, linewidth = linewidth)
                 if not date == None:
                     ax[2*i , j].set_title(date[k + j + i * cols])
+                else:
+                    ax[2 * i, j].set_title(set_type + " n°" + str(k + j + i * cols))
                 if len(beta) > 0: # di default beta = [], vuol dire che i beta veri non sono noti
                     ax[2*i , j].plot(t, beta[k + j + i* cols, :], linestyle = linestyle_beta, label = "logarithmic " + beta_str, linewidth = linewidth)
                     # if j % cols == 0:
@@ -125,8 +152,12 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 if j % cols != 0:
                     #print("removing y_ticks from I")
                     ax[2*i + 1, j].set_yticks([])
-                ax[2*i + 1, j].set_xlabel("day")
-
+                if not date == None:
+                    ax[2*i + 1, j].set_xlabel("day")
+                else:
+                    ax[2 * i + 1, j].set_xlabel("t")
+                #ax[2 * i + 1, j].xaxis.set_major_formatter(mticker.FormatStrFormatter('%d'))
+                ax[2 * i + 1, j].xaxis.set_major_formatter(formatter)
                 #ax[2*i , j].set_title(set_type + ' n°' + str(k + j + i * cols + 1))
                 #if i != 0 or j != 0:
                  #   ax[2*i, j].set_ylim(ax[0,0].get_ylim())
@@ -144,11 +175,12 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
             #ax[2*i, j].set_title(set_type + " n° " + str(k + j + i * cols))
         height0 = np.max(y_lim0up) - np.min(y_lim0down)
         height1 = np.max(y_lim1up) - np.min(y_lim1down)
-        if regione != None:
-            title = set_type + " n°" + str(k + 1) + ", " + regione
-        else:
-            title = set_type + " n°" + str(k + 1)
-        fig.suptitle(title, fontweight='bold')
+        if not date == None:
+            if regione != None:
+                title = set_type + " n°" + str(k + 1) + ", " + regione
+            else:
+                title = set_type + " n°" + str(k + 1)
+            fig.suptitle(title, fontweight='bold')
         for i in range(rows):
             for j in range(real_cols):
                 ax[2*i , j].set_ylim(np.min(y_lim0down) - 0.1 * height0, np.max(y_lim0up) + 0.1 * height0)
