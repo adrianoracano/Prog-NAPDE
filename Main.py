@@ -18,6 +18,8 @@ import math
 from matplotlib import pyplot as plt
 from srcs import plot_solutions
 import shutil
+import time
+
 tfk = tf.keras
 tfkl = tf.keras.layers
 tfkl.Normalization(dtype='float64')
@@ -49,6 +51,7 @@ parser.add_argument('-sp', '--save-plots', help='save the plots in the specified
 parser.add_argument('-sm', '--save-model', help='save the model file in the specified directory after the training', default='')
 parser.add_argument('-tc', '--test-case', help='start a test case', action='store_true')
 parser.add_argument('-bl', '--beta-log', help='start a beta-log test-case', action='store_true', default = False)
+parser.add_argument('-tm', '--time', help='track and save the CPU time required for the training', action='store_true')
 
 args = parser.parse_args()
 
@@ -69,7 +72,7 @@ training_steps = int(data_dict['training_steps'])
 display_step = int(data_dict['display_step'])
 S0 = float(data_dict['S0'])
 I0 = float(data_dict['I0']  )
-R0 = 1.0-I0-S0
+R0 = 1.0 - I0 - S0
 S_inf = float(data_dict['S_inf'])
 n_hidden = int(data_dict['n_hidden'])
 display_weights = int(data_dict['display_weights'])
@@ -164,16 +167,35 @@ if args.beta_log:
     beta0_train = beta_train[:, 0]
     beta0_val = beta_val[:, 0]
 
+#####################
+# Training  
+#####################
+
 if args.train:
+    # tracking del CPU-time
+    start_time = time.process_time()
     loss_train, loss_val, it = network.train(dataset, I_train, val_set, I_val, \
                                              beta0_train, beta0_val, \
                                              training_steps, display_weights, validate = True)
+    end_time = time.process_time()
+    elapsed_time = end_time - start_time
 
 save_folder = str(model.numLayers) + 'x' + str(model.n_hidden) + 'neu_' + str(model.n_iter) + 'iter_' + dataset_name[:-4]
 saved_model_path = args.save_model + '/' + save_folder
 
 if len(args.save_model)>0:
     model.save_model(saved_model_path)
+    if args.train and args.time:
+
+        # Convert elapsed CPU time to hours, minutes, and seconds
+        hours = int(elapsed_time / 3600)
+        minutes = int((elapsed_time % 3600) / 60)
+        seconds = int(elapsed_time % 60)
+
+        print("CPU time required for training: ", str(hours), " hours, ", str(minutes), " minutes, ", str(seconds), " seconds")
+        with open(saved_model_path + '/cpu_time.txt', 'w') as file:
+            file.write(f'CPU time required for training: {hours} hours, {minutes} minutes, {seconds} seconds\n')
+            file.write(f'CPU time required for training: {elapsed_time} seconds\n')
 
 b_train_nn, I_train_nn = network.compute_beta_I(dataset, I_train[:, 0], beta0_train)
 b_val_nn, I_val_nn = network.compute_beta_I(val_set, I_val[:, 0], beta0_val)
@@ -249,19 +271,15 @@ if args.train:
             os.makedirs(path)
         filepath2 = path + "/loss_plot_semilog.png";
         plt.savefig(fname=filepath2)
-    #plt.show()
+    plt.show()
     plt.close()
 
 
 if len(args.save_plots) > 0:
     shutil.copy('data.txt', saved_plots_path)
-    shutil.copy('utilities\data-for-GenerateDataset.txt', saved_plots_path)
-    print('saved data')
 
 if len(args.save_model) > 0:
     shutil.copy('data.txt', saved_model_path)
-    shutil.copy('utilities\data-for-GenerateDataset.txt', saved_model_path)
-    print('saved data')
 
     
 
