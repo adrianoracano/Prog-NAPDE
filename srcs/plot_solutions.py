@@ -123,7 +123,7 @@ def plot_beta_I_2(I_nn, beta_nn, I, beta = [], set_type = '', plot_display = 1, 
                 if not date == None:
                     ax[2*i , j].set_title(date[k + j + i * cols])
                 else:
-                    ax[2 * i, j].set_title(set_type + " n°" + str(k + j + i * cols))
+                    ax[2 * i, j].set_title(set_type + " n°" + str(k + j + i * cols + 1))
                 if len(beta) > 0: # di default beta = [], vuol dire che i beta veri non sono noti
                     ax[2*i , j].plot(t, beta[k + j + i* cols, :], linestyle = linestyle_beta, label = "logarithmic " + beta_str, linewidth = linewidth)
                     # if j % cols == 0:
