@@ -1,4 +1,4 @@
-Per eseguire i test case:
+Per eseguire i test case 1 e 2:
 1) eseguire lo script utilities/GenerateDataset.py compilando il file utilities/data-for-GenerateDataset.txt:
 
 alpha: ...
@@ -55,7 +55,7 @@ dove:
 	python3 Main.py --test-case
 Per il training si possono utilizzare le possibili opzioni:
 
---load-model nome_rete : viene caricata la rete 'nome_rete' (non ne viene creata una nuova)
+--load-model nome_rete : viene caricata la rete 'nome_rete' (quindi non ne viene creata una nuova)
 --train : viene eseguito il training della rete
 --plot-train : vengono mostrati alla fine del training i plot del training set
 --plot-test : vengono mostrati alla fine del training i plot del test set
@@ -79,11 +79,12 @@ use_zone = ...
 dove:
 * 'path_i' è il percorso del file contenente le osservazioni sugli infetti (cartella 'dati-regioni' della repository del DPC)
 * 'path_t' è il percorso del file contenente le osservazioni sulle temperature ('.\Temperature')
-* 'regione_beta': una list contenente le regioni di interesse da cui estrarre gli infetti (e.g.: regione_temp = ['Lombardia'])
-* 'regione_beta': una list contenente le città di interesse da cui estrarre le temperature (e.g.: regione_temp = ['Milano'])
+* 'regione_beta': una list contenente le regioni di interesse da cui estrarre gli infetti (e.g.: regione_beta = ['Lombardia'])
+* 'regione_temp': una list contenente le città di interesse da cui estrarre le temperature (e.g.: regione_temp = ['Milano'])
 * 'K' la dimensione del training set
 * 'n_giorni' è il numero di giorni che verrà utilizzato per costruire gli intervalli del dataset
 * 'overlap' è il numero di giorni di overlap tra gli intervalli
+* 'n_timesteps' è il numero di timesteps di ogni intervallo nel dataset
 * 'nome_file' è il nome con cui verrà salvato il dataset
 * 'use_zone' se impostato su True estrarrà anche i livelli di isolamento da usare nel training
 
@@ -92,4 +93,4 @@ dove:
 3) eseguire lo script Main.py con il comando:
 	python3 Main.py --beta-log
 
-Per il training si possono utilizzare le opzioni già spiegate per il test case.
+Per il training si possono utilizzare le opzioni già spiegate per i test case 1 e 2.
